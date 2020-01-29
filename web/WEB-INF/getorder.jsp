@@ -19,7 +19,7 @@
 <%        
               
    ps = con.prepareStatement("select o1.*, k.tel as k_tel, k.biltel as k_biltel from " + 
-           Const.getOrder1Union("datum, kundnr, namn, adr1, adr2, adr3, annanlevadress, levadr1, levadr2, levadr3, referens, saljare, marke, fraktbolag, linjenr1, linjenr2, linjenr3, ordermeddelande") + " o1 left outer join kund k on k.nummer=o1.kundnr where o1.wmsordernr=?");
+           Const.getOrder1Union("datum, kundnr, namn, adr1, adr2, adr3, annanlevadress, levadr1, levadr2, levadr3, referens, saljare, marke, fraktbolag, linjenr1, linjenr2, linjenr3, ordermeddelande, levdat") + " o1 left outer join kund k on k.nummer=o1.kundnr where o1.wmsordernr=?");
    ps.setString(1, ordernr);
    ResultSet o1=ps.executeQuery();
    ps = con.prepareStatement("select o2.*, l.ilager, l.lagerplats, a.refnr, a.plockinstruktion, s.finnsilager from " + 
@@ -80,6 +80,12 @@
                     <div class="text"><%= Const.toHtml(o1.getString("k_tel")) %> <%= Const.toHtml(o1.getString("k_biltel")) %></div>
                 </td>
                 <td class="o1-r3c2">
+                    <% if (o1.getString("levdat")!=null) { %>
+                    <div class="border">
+                        <div class="o1-rubrik">Leveransdatum</div>
+                        <div class="text bold"><%= o1.getString("levdat") %></div>
+                    </div>
+                    <% } %>
                     <div class="o1-rubrik">Godsmärke</div>
                     <div class="text"><%= Const.toHtml(o1.getString("marke")) %></div>
                     <div class="o1-rubrik">Transportsätt:</div>

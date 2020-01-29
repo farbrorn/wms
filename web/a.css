@@ -40,6 +40,13 @@ table {
     height: 5mm;
     margin-bottom: 2mm;
 }
+.bold {
+    font-weight: bold;
+}
+.border {
+    border: 2px solid black;
+    padding: 1px;
+}
 .og-ordergrupp {
     width: 120px;
     height: 24px;

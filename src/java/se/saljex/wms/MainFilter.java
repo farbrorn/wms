@@ -30,9 +30,9 @@ import javax.sql.DataSource;
 public class MainFilter implements Filter {
 	@Resource(mappedName = "sxadm")
 	private DataSource sxadm;
-	@Resource(mappedName = "ppgdb")
+//	@Resource(mappedName = "ppgdb")
 //	@Resource(mappedName = "sxadm")
-	private DataSource ppgdb;
+//	private DataSource ppgdb;
     
     private static final boolean debug = true;
 
@@ -49,18 +49,19 @@ public class MainFilter implements Filter {
             throws IOException, ServletException {
         
 		Connection con=null;
-		Connection con2=null;
+//		Connection con2=null;
 		try {
+                    System.out.print("h1");
 			con = sxadm.getConnection();
-			con2 = ppgdb.getConnection();
+//			con2 = ppgdb.getConnection();
 			request.setAttribute("sxconnection", con); 
-			request.setAttribute("ppgconnection", con2); 
+//			request.setAttribute("ppgconnection", con2); 
  			chain.doFilter(request,response);
 		} catch (SQLException e) {
 			Logger.getLogger("sx-logger").severe("SQL-Fel:" + e.getMessage()); e.printStackTrace();
 		} finally { 
                     try {con.close(); } catch (Exception eee) {}
-                    try {con2.close(); } catch (Exception eee) {}
+  //                  try {con2.close(); } catch (Exception eee) {}
                 }		
     }
 

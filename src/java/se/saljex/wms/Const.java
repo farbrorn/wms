@@ -25,9 +25,9 @@ public class Const {
     public static Connection getConnection(HttpServletRequest request) {
         return (Connection)request.getAttribute("sxconnection");
     }
-    public static Connection getPPGConnection(HttpServletRequest request) {
-        return (Connection)request.getAttribute("ppgconnection");
-    }
+ //   public static Connection getPPGConnection(HttpServletRequest request) {
+ //       return (Connection)request.getAttribute("ppgconnection");
+ //   }
 	public static final  String ORDER_STATUS_SPARAD = "Sparad";
 	public static final  String ORDER_STATUS_DIREKTLEV = "Direkt";
 	public static final  String ORDER_STATUS_SIMPLEORDER = "Simple";
