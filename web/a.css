@@ -1,0 +1,180 @@
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.order-knappar {
+
+}
+.sidhuvud {
+    width: 100%; 
+    background-color: lightblue;
+}
+.ordergrupper {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 20px;
+    padding-right: 10px;
+    border-right: 1px solid black;
+    height: 700px;
+    overflow-y: scroll;
+}
+.orderlista {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 20px;
+    padding-right: 10px;
+    border-right: 1px solid black;
+    height: 700px;
+    overflow-y: scroll;
+}
+.orderlista tr:hover, .ordergrupper tr:hover {
+    background-color: #f3f3f3;
+}
+.streckkod {
+    font-family: 'Libre Barcode 39', cursive;
+    font-size: 40px;
+    width: 100%;
+    text-align: right;
+}
+.text{
+    height: 5mm;
+    margin-bottom: 2mm;
+}
+.og-ordergrupp {
+    width: 120px;
+    height: 24px;
+}
+.og-antal {
+    width: 40px;
+    height: 24px;
+
+}
+.o-ordernr {
+    width: 80px;
+}
+.o-datum {
+    width: 90px;
+
+}
+.o-namn {
+    width: 150px;
+
+}
+.order-snabbrader {
+    width: 500px;
+    padding: 5mm;
+    display: inline-block;
+    vertical-align: top;
+}
+.order {
+    width: 210mm;
+    border: 1px solid grey;
+    padding: 5mm;
+    display: inline-block;
+    vertical-align: top;
+}
+.orderhuvud {
+    border-bottom: 1px solid black;
+}
+.orderrader {
+    border-bottom: 1px solid black;
+}
+.order table {
+    width: 100%;
+}
+.o1-rubrik {
+    font-size: 10px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+}
+.o1-r1c1 {
+    width: 20%
+}
+.o1-r1c2 {
+    width: 60%;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+}
+.o1-r1c3 {
+    width: 20%
+
+}
+
+.o1-r2c1, .o1-r2c2 {
+    width: 50%;
+    padding-left: 10mm;
+}
+.o1-r3c1, .o1-r3c2 {
+    width: 50%;
+    padding-left: 10mm;
+    padding-top: 5mm;
+    vertical-align: top;
+}
+.o1-adrruta {
+    border: 1px solid grey;
+    margin: 0;
+    padding: 5mm;
+    height: 20mm;
+}
+
+.o2-bild {
+    width: 10mm;
+    height: 10mm;
+}            
+.o2-bild img {
+    max-width: 100%;
+    max-height: 100%;
+}
+.o2-lagerplats {
+    width: 20mm;
+}            
+.o2-artnr {
+    width: 20mm;
+}            
+.o2-namn {
+    width: 90mm;
+}            
+.o2-best {
+    width: 20mm;
+    text-align: right;
+}            
+.o2-finns {
+    width: 5mm;
+}            
+.o2-enh {
+    width: 10mm;
+}            
+.o2-linje {
+    width: 50px;
+}            
+.o22-artnr {
+    width: 120px;
+}            
+.o22-namn {
+    width: 240px;
+}            
+.o22-enh {
+    width: 30px;
+}            
+.o22-indikator {
+    width: 120px;
+}
+.bold-border {
+   border: 2px solid black; 
+}   
+
+.link {
+    cursor: pointer;
+}
+
+
+@media print {
+    .sidhuvud, .ordergrupper, .orderlista, .order-knappar, .order-snabbrader {
+        display: none;
+    }
+    .order {
+        border: none;
+    }
+}
