@@ -22,10 +22,11 @@
            Const.getOrder1Union("datum, kundnr, namn, adr1, adr2, adr3, annanlevadress, levadr1, levadr2, levadr3, referens, saljare, marke, fraktbolag, linjenr1, linjenr2, linjenr3, ordermeddelande, levdat") + " o1 left outer join kund k on k.nummer=o1.kundnr where o1.wmsordernr=?");
    ps.setString(1, ordernr);
    ResultSet o1=ps.executeQuery();
-   ps = con.prepareStatement("select o2.*, l.ilager, l.lagerplats, a.refnr, a.plockinstruktion, s.finnsilager from " + 
+   ps = con.prepareStatement("select o2.*, l.ilager, l.lagerplats, a.refnr, a.plockinstruktion, s.finnsilager, ppg.quantityconfirmed from " + 
     Const.getOrder2Union("pos, text, artnr, namn, best, enh, stjid") + " o2 join " + Const.getOrder1Union("lagernr") + " o1 on o1.wmsordernr=o2.wmsordernr "
             + " left outer join lager l on l.artnr=o2.artnr and l.lagernr=o1.lagernr left outer join artikel a on a.nummer=o2.artnr "
             + " left outer join stjarnrad s on s.stjid=o2.stjid and o2.stjid>0 "
+            + " left outer join (select masterordername, hostidentification, sum(quantityconfirmed::numeric) as quantityconfirmed from ppgorderpick where motivetype not in (1,3,5,6,10) group by masterordername, hostidentification) ppg on ppg.masterordername = o1.wmsordernr and ppg.hostidentification::numeric=o2.pos "
             + " where o2.wmsordernr=? order by pos",ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
    ps.setString(1, ordernr);
    ResultSet o2=ps.executeQuery();
@@ -120,7 +121,12 @@
                         <td class="o2-best"><%= Const.getFormatNumber(o2.getDouble("best")) %></td>
                         <td class="o2-finns"><%= Const.noNull(o2.getDouble("ilager")).compareTo(0.0)>0 ? "*" : "" %></td>
                         <td class="o2-enh"><%= Const.toHtml(o2.getString("enh")) %></td>
-                        <td class="o2-linje">______</td>
+                        <td class="o2-linje">
+                            <% Double quantityConfirmed = o2.getDouble("quantityconfirmed");
+                                if (o2.wasNull()) quantityConfirmed=null;
+                            %>
+                            <%= quantityConfirmed == null ? "______" : "(" + Const.getFormatNumber(quantityConfirmed) + ")" %> 
+                        </td>
                     </tr>
                     <tr style="vertical-align: top; height: 20px; font-size: 12px;">
                         <td colspan="2" class=""><%= Const.toHtml(o2.getString("refnr")) %></td>
