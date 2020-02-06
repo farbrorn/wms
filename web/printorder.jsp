@@ -18,9 +18,20 @@
         <link rel="stylesheet" type="text/css" href="a.css">           
         <script>
             function p() {
-                window.print();
-                window.close();
+            var is_chrome = Boolean(window.chrome);
+            if (is_chrome) {
+                winPrint.onload = function () {
+                    setTimeout(function () { // wait until all resources loaded 
+                        winPrint.print();  // change window to winPrint
+                        winPrint.close();// change window to winPrint
+                    }, 200);
+                };
             }
+            else {
+                winPrint.print();
+                winPrint.close();
+            }      
+        }
         </script>
     </head>
     <body onload="p()">
