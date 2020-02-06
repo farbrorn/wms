@@ -109,11 +109,11 @@
         <% } %>
         <% while (o2.next()) { %>
         <% if (!Const.isEmpty(o2.getString("text")) && Const.isEmpty(o2.getString("artnr"))) { %>
-        <tr><td><%= Const.toHtml(o2.getString("text")) %></td></tr>
+        <tr class="avoid-page-break"><td class="avoid-page-break"><%= Const.toHtml(o2.getString("text")) %></td></tr>
         <% } else { %>
-        <tr><td>
+        <tr class="avoid-page-break"><td class="avoid-page-break">
                 <table>
-                    <tr style="vertical-align: top;">
+                    <tr class="avoid-page-break" style="vertical-align: top;">
                         <td class="o2-bild" rowspan="2"><img onerror="this.style.display='none';" src="<%= Const.getBildUrl() %><%= o2.getString("artnr") %>"></td>
                         <td class="o2-lagerplats"><%= Const.toHtml(o2.getString("lagerplats")) %></td>
                         <td class="o2-artnr"><%= Const.toHtml(o2.getString("artnr")) %></td>

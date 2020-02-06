@@ -20,16 +20,14 @@
             function p() {
             var is_chrome = Boolean(window.chrome);
             if (is_chrome) {
-                winPrint.onload = function () {
                     setTimeout(function () { // wait until all resources loaded 
-                        winPrint.print();  // change window to winPrint
-                        winPrint.close();// change window to winPrint
+                        window.print();  // change window to winPrint
+                        window.close();// change window to winPrint
                     }, 200);
-                };
             }
             else {
-                winPrint.print();
-                winPrint.close();
+                window.print();
+                window.close();
             }      
         }
         </script>

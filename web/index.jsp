@@ -141,7 +141,7 @@ function skickaTillPlock() {
     <body onload="load()">
         
         <div class="sidhuvud">
-            <div style="font-size: 26px; font-weight: bold; margin-bottom: 10px;">Dagens order</div>
+            <div style="font-size: 26px; font-weight: bold; margin-bottom: 10px;">Dagens order <span style="font-size: 12px;"><a href="printorderform.jsp" target="_blank">Snabbutskrift</a></span></div>
             <div>
                 <form id="form">
                     <button onclick="sendForm()" style="width:100px; height: 22px; margin-right: 24px; padding: 0;">

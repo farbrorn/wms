@@ -184,4 +184,5 @@ table {
     .order {
         border: none;
     }
+    .avoid-page-break {page-break-inside: avoid;}
 }
