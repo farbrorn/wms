@@ -18,7 +18,6 @@
     String visaOrderStatus="Sparad";
     String visaOrderGrupp=request.getParameter("ordergrupp");
     boolean visaUtskrivna="true".equals(request.getParameter("visautskrivna"));
-    boolean visaAllaLevdatum="true".equals(request.getParameter("visaallalevdatum"));
     boolean visaSamfakt="true".equals(request.getParameter("visasamfakt"));
     boolean visaAvvaktande="true".equals(request.getParameter("visaavvaktande"));
     
@@ -152,7 +151,6 @@ function skickaTillPlock() {
                     </div>
                         </button>
                 Visa Utskrivna:<input onclick="sendForm()" type="checkbox" name="visautskrivna" value="true" <%= visaUtskrivna ? "checked" : "" %>>
-                Visa alla lev.datum:<input onclick="sendForm()" type="checkbox" name="visaallalevdatum" value="true" <%= visaAllaLevdatum ? "checked" : "" %>>
                 Samfakt:<input onclick="sendForm()" type="checkbox" name="visasamfakt" value="true" <%= visaSamfakt ? "checked" : "" %>>
                 Avvaktande:<input onclick="sendForm()" type="checkbox" name="visaavvaktande" value="true" <%= visaAvvaktande ? "checked" : "" %>>
                 <input type="hidden" name="ordergrupp" value="<%= request.getParameter("ordergrupp") %>">
@@ -178,14 +176,12 @@ function skickaTillPlock() {
 "\n" +
 " from " + Const.getOrder1Union("lagernr, status, fraktbolag, linjenr1, linjenr2, linjenr3, levdat ") + "o1 " +
 "left outer join turlinje tl1 on (tl1.linjenr=o1.linjenr1 or tl1.linjenr=o1.linjenr2 or tl1.linjenr=o1.linjenr3) and tl1.franfilial=o1.lagernr\n" +
-"where (o1.levdat<=current_date or o1.levdat is null or 0=? ) and lagernr=? and o1.status in (" + statusarInString + ") ) o \n" +
+"where  lagernr=? and o1.status in (" + statusarInString + ") ) o \n" +
 
 "group by fraktbolag order by fraktbolag\n";
      
    ps=con.prepareStatement(q);  
    int pos=1;  
-   if (visaAllaLevdatum) ps.setInt(pos, 0); else ps.setInt(pos, 1);
-   pos++;
    ps.setInt(pos, lagernr);
    pos++;
    ps.setString(pos, visaOrderStatus);
@@ -236,15 +232,13 @@ function skickaTillPlock() {
               + " o2 on o1.wmsordernr=o2.wmsordernr " + 
              " left outer join lager l on l.artnr=o2.artnr and l.lagernr=o1.lagernr " + 
              " left outer join stjarnrad s on s.stjid=o2.stjid and o2.stjid>0 " +
-              " where (o1.levdat<=current_date or o1.levdat is null or 0=? ) and o1.lagernr=? and o1.status in (" + statusarInString + ") " +
+              " where  o1.lagernr=? and o1.status in (" + statusarInString + ") " +
               " and " + Const.getSQLTransportorOmkodad("fraktbolag", "tl1.linjenr") + "  = ? " +
               " group by o1.namn, o1.wmsordernr, o1.datum, o1.status, o1.levdat " +
-              " order by case when o1.status='Sparad' then '0' else o1.status end, o1.status, o1.wmsordernr desc"
+              " order by case when o1.status='Sparad' then '0' else o1.status end, o1.status, case when o1.levdat is null then current_date else o1.levdat end, o1.wmsordernr desc"
               ;
    ps = con.prepareStatement(q);
    pos=1;
-   if (visaAllaLevdatum) ps.setInt(pos, 0); else ps.setInt(pos, 1);
-   pos++;
    ps.setInt(pos, lagernr);
    pos++;
    ps.setString(pos, visaOrderStatus);
@@ -273,6 +267,13 @@ function skickaTillPlock() {
         <div class="orderlista">
             <div style="font-weight: bold; margin-bottom: 6px;">Order Grupp: <%= Const.toHtml(visaOrderGrupp) %></div>
         <table id="ordertable">
+            <tr>
+                <td class="o-ordernr">Order/Datum</td>
+                <td class="o-datum"></td>
+                <td class="o-namn">Kund</td>
+                <td>Lager/Lev.datum</td>
+                
+            </tr>
             <% int tabindex=0; %>
             <% while (rs.next()) { %>
             <% 
@@ -289,7 +290,7 @@ function skickaTillPlock() {
                     <td class="o-ordernr"> <%= rs.getString("ordernr") %><br><%= rs.getString("datum") %> </td>
                 <td class="o-datum"><%= rs.getString("status") %></td>
                 <td class="o-namn"><%= Const.toHtml(rs.getString("namn")) %></td>
-                <td><div style="width: 100px; height: 20px; text-align: center; overflow: visible; white-space: nowrap; border: 1px solid grey; position:relative;"><div style="top: 0; left:0; position: absolute; line-height: 20px; width: 100%; height: 100%; text-align: center; z-index: 10;"><%= raderIlager %>/<%= rader %></div><div style="background-color: lightgreen; position: absolute; top: 0; left: 0; height: 100%; width:<%= proc %>%"></div></div><%= Const.toStr(rs.getString("levdat")) %></td>
+                <td><div style="width: 100px; height: 20px; text-align: center; overflow: visible; white-space: nowrap; border: 1px solid grey; position:relative;"><div style="top: 0; left:0; position: absolute; line-height: 20px; width: 100%; height: 100%; text-align: center; z-index: 10;"><%= raderIlager %>/<%= rader %></div><div style="background-color: lightgreen; position: absolute; top: 0; left: 0; height: 100%; width:<%= proc %>%"></div></div><b><%= Const.toStr(rs.getString("levdat")) %></b></td>
                 <td style="display: none" id="snabbrader<%= rs.getString("ordernr") %>">
                     <% request.setAttribute("ordernr", rs.getString("ordernr")); %>
                     <jsp:include page="/WEB-INF/getorderrader.jsp" flush="true" />

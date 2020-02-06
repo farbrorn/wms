@@ -51,7 +51,6 @@ public class MainFilter implements Filter {
 		Connection con=null;
 //		Connection con2=null;
 		try {
-                    System.out.print("h1");
 			con = sxadm.getConnection();
 //			con2 = ppgdb.getConnection();
 			request.setAttribute("sxconnection", con); 
