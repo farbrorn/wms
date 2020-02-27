@@ -44,32 +44,8 @@ public class ActionServlet extends HttpServlet {
             ResultSet rs;
             String ac=request.getParameter("ac");
             JsonBuilder jb = new JsonBuilder();
-            if ("doesuserexist".equals(ac)) {
-                try {
-                    if (Const.doesUserExists(con,request.getParameter("anvandare"))) jb.addResponseTrue();
-                    else jb.addResponseFalse();
-                    out.print(jb.getJsonString());
-                } catch (SQLException e) { out.print("error - SQLException");  }
 
-            } else if ("isorderlocked".equals(ac)) {
-                try {
-                    Integer ordernr= Integer.parseInt(request.getParameter("ordernr"));
-                    if (Const.isOrderLocked(con,ordernr)) { 
-                        jb.addResponseTrue();
-                    }
-                    else jb.addResponseFalse();
-                    out.print(jb.getJsonString());
-                } 
-                catch (SQLException e) {
-                    jb.addResponseError("SQLException: " + e.toString());
-                    out.print(jb.getJsonString());
-                }
-                catch(NumberFormatException e) {
-                    jb.addResponseError("Ogiltigt format på ordernr.");
-                    out.print(jb.getJsonString());
-                }
-
-            } else if ("test".equals(ac)) {
+            if ("test".equals(ac)) {
                 jb.addResponseOK();
                 jb.addMessage("Hej på dig!");
                 jb.addField("test", "Testvärde");
@@ -82,27 +58,17 @@ public class ActionServlet extends HttpServlet {
                     String anvandare=request.getParameter("anvandare");
                     if (!Const.doesUserExists(con, anvandare)) throw new ErrorException("Användare är ogiltigt.");
 
-                    ps = con.prepareStatement("select * from " + Const.getOrder1Union("ordernr, lastdatum, lastav, status") + "o1 where wmsordernr=?");
+                    ps = con.prepareStatement("select * from wmsorder1 o1 where wmsordernr=?");
                     ps.setString(1, wmsOrdernr);
                     rs = ps.executeQuery();
                     if (!rs.next()) throw new ErrorException("Order " + wmsOrdernr + " finns inte.");
                     if (rs.getDate("lastdatum")!=null) throw new ErrorException("Ordern är låst " + rs.getString("lastdatum") + " av " + rs.getString("lastav") + ". Lås upp innan överföring."); 
                     if (!"Sparad".equals(rs.getString("status"))) throw new ErrorException("Orderstatus är " + rs.getString("status") + ". Endast sparade order kan hanteras."); 
-                    int ordernr=rs.getInt("ordernr");
-                    String schemaPrefix = rs.getString("dbschema") + ".";
 
-                    ps = con.prepareStatement("update " + schemaPrefix + "order1 set status='Utskr' where ordernr=?");
-                    ps.setInt(1, ordernr);
-                    if (ps.executeUpdate()==0) throw new ErrorException("Något okänt gick fel vid SQL update order1 (rowcount=0)");
 
-                    ps = con.prepareStatement("insert into " + schemaPrefix + "orderhand (ordernr, datum, tid, anvandare, handelse ) values (?,current_date,current_time,?,?)");
-                    ps.setInt(1, ordernr);
+                    ps = con.prepareStatement("select ppgexportorder(?,?)");
+                    ps.setString(1, wmsOrdernr);
                     ps.setString(2, anvandare);
-                    ps.setString(3, "Utskriven");
-                    if (ps.executeUpdate()==0) throw new ErrorException("Något okänt gick fel vid SQL insert orderhand (rowcount=0)");
-
-                    ps = con.prepareStatement("select " + schemaPrefix + "ppgexportorder(?)");
-                    ps.setInt(1, ordernr);
                     ps.executeQuery();
                    
 //                    con.createStatement().executeUpdate("");

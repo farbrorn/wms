@@ -174,7 +174,7 @@ function skickaTillPlock() {
 "o1.wmsordernr,\n" + Const.getSQLTransportorOmkodad("fraktbolag", "tl1.linjenr") + " as fraktbolag,\n" +
 "tl1.namn t1_namn, tl1.d1 as t1_d1, tl1.d2 as t1_d2, tl1.d3 as t1_d3, tl1.d4 as t1_d4,  tl1.d5 as t1_d5\n" +
 "\n" +
-" from " + Const.getOrder1Union("lagernr, status, fraktbolag, linjenr1, linjenr2, linjenr3, levdat ") + "o1 " +
+" from wmsorder1 o1 " +
 "left outer join turlinje tl1 on (tl1.linjenr=o1.linjenr1 or tl1.linjenr=o1.linjenr2 or tl1.linjenr=o1.linjenr3) and tl1.franfilial=o1.lagernr\n" +
 "where  lagernr=? and o1.status in (" + statusarInString + ") ) o \n" +
 
@@ -223,13 +223,11 @@ function skickaTillPlock() {
     
     <%
       q = "select o1.wmsordernr as ordernr, o1.datum,   o1.namn, o1.status, " + 
-              " sum(case when o2.best > 0 then 1 else 0 end) as rader, levdat, " +
+              " sum(case when o2.best > 0 then 1 else 0 end) as rader, o1.levdat, " +
               " sum(case when (o2.best > 0 and l.ilager > 0) or (s.finnsilager>0) then 1 else 0 end) as raderilager " +
-              " from " + Const.getOrder1Union("datum, namn, lagernr, status, linjenr1, linjenr2, linjenr3, fraktbolag, levdat ") + "o1 " +
+              " from wmsorder1 o1 " +
         "left outer join turlinje tl1 on (tl1.linjenr=o1.linjenr1 or tl1.linjenr=o1.linjenr2 or tl1.linjenr=o1.linjenr3) and tl1.franfilial=o1.lagernr " +
-             " left outer join "
-              + Const.getOrder2Union("best, artnr, stjid") 
-              + " o2 on o1.wmsordernr=o2.wmsordernr " + 
+             " left outer join wmsorder2 o2 on o1.wmsordernr=o2.wmsordernr and o1.orgordernr=o2.orgordernr " + 
              " left outer join lager l on l.artnr=o2.artnr and l.lagernr=o1.lagernr " + 
              " left outer join stjarnrad s on s.stjid=o2.stjid and o2.stjid>0 " +
               " where  o1.lagernr=? and o1.status in (" + statusarInString + ") " +

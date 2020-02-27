@@ -55,16 +55,15 @@ public class Const {
         
         //Databas schema namn med tillhörande offsset för att lägga till ordernummret.
         //Observera att array-elementen hör ihop
-        private static final String[] dbSchemas = new String[]{"sxfakt","sxasfakt"};
+//        private static final String[] dbSchemas = new String[]{"sxfakt","sxasfakt"};
 //        private static final int[] dbSchemasOrdernrOffsets = new int[]{100000000, 200000000};
-        private static final String[] ordernrPrefix = new String[]{"AB-", "AS-"};
-        public static String[] getDbSchemas() { return dbSchemas; }
+//        private static final String[] ordernrPrefix = new String[]{"AB-", "AS-"};
+//        public static String[] getDbSchemas() { return dbSchemas; }
         //public static int[] getDbSchemasOrdernrOffsets() { return dbSchemasOrdernrOffsets; }
-        public static String[] getOrdernrPrefix() { return ordernrPrefix; }
+//        public static String[] getOrdernrPrefix() { return ordernrPrefix; }
 
         public static String getLogoUrl(Connection con, String dbSchema) throws SQLException {
-            String dbPrefix;
-            if ("sxasfakt".equals(dbSchema)) dbPrefix="sxasfakt."; else dbPrefix="";
+            String dbPrefix = dbSchema + ".";
             PreparedStatement ps = con.prepareStatement("select varde from " + dbPrefix + "sxreg where id=?");
             ps.setString(1, "Hemsida-LogoUrl");
             ResultSet rs = ps.executeQuery();
@@ -82,21 +81,24 @@ public class Const {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return true; else return false;
         }
-
-        public static boolean isOrderLocked(Connection con, int wmsOrdernr) throws SQLException{
-            PreparedStatement ps = con.prepareStatement("select ordernr from "+ getOrder1Union("lastdatum") + " o1 where lastdatum is not null and wmsordernr=?");
-            ps.setInt(1, wmsOrdernr);
+/*
+        public static boolean isOrderLocked(Connection con, String wmsOrdernr) throws SQLException{
+            PreparedStatement ps = con.prepareStatement("select ordernr from wmsorder1 o1 where lastdatum is not null and wmsordernr=? and o1.orgordernr= substring(trim(?),4)::integer ");
+            ps.setString(1, wmsOrdernr);
+            ps.setString(2, wmsOrdernr);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return true; else return false;
         }
-        
+*/        
         public static String getSchema(Connection con, int wmsOrdernr) throws SQLException {
-            PreparedStatement ps = con.prepareStatement("select dbschema from " + getOrder1Union(null) + "o1 where wmsordernr=?" );
+            PreparedStatement ps = con.prepareStatement("select wmsdbschema from  wmsorder1 o1 where wmsordernr=? and o1.orgordernr= substring(trim(?),4)::integer" );
             ps.setInt(1, wmsOrdernr);
+            ps.setInt(2, wmsOrdernr);
             ResultSet rs=ps.executeQuery();
             return rs.getString(1);
         }
-        
+  
+/*        
         public static String getOrder1Union(String columnList) {
             StringBuilder sb = new StringBuilder();
             sb.append("(");
@@ -156,7 +158,7 @@ public class Const {
             sb.append(")");
             return sb.toString();
         }
-        
+*/        
     
     public static String getSQLTransportorOmkodad(String colnameFraktbolag, String colnameLinjenr) {
         return 
