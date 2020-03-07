@@ -62,6 +62,7 @@ public class Const {
         //public static int[] getDbSchemasOrdernrOffsets() { return dbSchemasOrdernrOffsets; }
 //        public static String[] getOrdernrPrefix() { return ordernrPrefix; }
 
+        public static int getLagerNr() { return 0; }
         public static String getLogoUrl(Connection con, String dbSchema) throws SQLException {
             String dbPrefix = dbSchema + ".";
             PreparedStatement ps = con.prepareStatement("select varde from " + dbPrefix + "sxreg where id=?");
@@ -81,17 +82,8 @@ public class Const {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return true; else return false;
         }
-/*
-        public static boolean isOrderLocked(Connection con, String wmsOrdernr) throws SQLException{
-            PreparedStatement ps = con.prepareStatement("select ordernr from wmsorder1 o1 where lastdatum is not null and wmsordernr=? and o1.orgordernr= substring(trim(?),4)::integer ");
-            ps.setString(1, wmsOrdernr);
-            ps.setString(2, wmsOrdernr);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return true; else return false;
-        }
-*/        
         public static String getSchema(Connection con, int wmsOrdernr) throws SQLException {
-            PreparedStatement ps = con.prepareStatement("select wmsdbschema from  wmsorder1 o1 where wmsordernr=? and o1.orgordernr= substring(trim(?),4)::integer" );
+            PreparedStatement ps = con.prepareStatement("select wmsdbschema from  wmsorder1 o1 where wmsordernr=? and o1.orgordernr= wmsordernr2int(?)" );
             ps.setInt(1, wmsOrdernr);
             ps.setInt(2, wmsOrdernr);
             ResultSet rs=ps.executeQuery();

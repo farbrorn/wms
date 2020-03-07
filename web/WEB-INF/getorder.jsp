@@ -9,7 +9,7 @@
 <%@page import="java.sql.Connection"%>
 <%
     Connection con=Const.getConnection(request);
-    String ordernr= (String)request.getAttribute("ordernr");
+    String ordernr= (String)request.getAttribute("wmsordernr");
     
     PreparedStatement ps;
 %>
@@ -37,7 +37,7 @@ ps.setString(1, ordernr);
             + " left outer join lager l on l.artnr=o2.artnr and l.lagernr=o1.lagernr left outer join artikel a on a.nummer=o2.artnr "
             + " left outer join stjarnrad s on s.stjid=o2.stjid and o2.stjid>0 "
             + " left outer join (select masterordername, hostidentification, sum(quantityconfirmed::numeric) as quantityconfirmed from ppgorderpick where motivetype not in (1,3,5,6,10) group by masterordername, hostidentification) ppg on ppg.masterordername = o1.wmsordernr and ppg.hostidentification::numeric=o2.pos "
-            + " where o2.wmsordernr=? and o2.orgordernr= substring(trim(?),4)::integer order by pos",ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            + " where o2.wmsordernr=? and o2.orgordernr= wmsordernr2int(?) order by pos",ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
    ps.setString(1, ordernr);
    ps.setString(2, ordernr); // Optimering för att nyttja index i databas
@@ -143,9 +143,9 @@ ps.setString(1, ordernr);
                                     } else { 
                                         quantityConfirmedString = "(" + Const.getFormatNumber(quantityConfirmed) + ")"; 
                                     }
-                                } 
+                                } else quantityConfirmedString = "______";
                             %>
-                            <%= quantityConfirmed == null ? "______" : quantityConfirmedString %> 
+                            <%= quantityConfirmedString %> 
                         </td>
                     </tr>
                     <tr style="vertical-align: top; height: 20px; font-size: 12px;">

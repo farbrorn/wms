@@ -19,7 +19,7 @@
         <%= Const.getBarcodeFontLinkHTML() %>
     </head>
     <body>
-        <% request.setAttribute("ordernr", ordernr); %>
+        <% request.setAttribute("wmsordernr", ordernr); %>
             <jsp:include page="/WEB-INF/getorder.jsp" flush="true" />
     </body>
 </html>

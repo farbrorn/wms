@@ -12,7 +12,7 @@
 <%
     String bildurl = Const.getBildUrl();
     String logourl="https://www.saljex.se/p/s200/logo-saljex";
-    Integer lagernr=0;
+    Integer lagernr=Const.getLagerNr();
 //    Integer ordernr=null;
 //    try { ordernr=Integer.parseInt(request.getParameter("ordernr")); } catch (Exception e) {}
     String visaOrderStatus="Sparad";
@@ -111,7 +111,7 @@
             }
             
             function visaOrder() {
-                window.open("<%= request.getContextPath() %>/vieworder.jsp?ordernr="+visadOrder);
+                window.open("<%= request.getContextPath() %>/vieworder.jsp?wmsordernr="+visadOrder);
             }
 function skickaTillPlock() {
      
@@ -123,7 +123,7 @@ function skickaTillPlock() {
       var r = JSON.parse(this.responseText);
       
     if (r["response"]=="OK") {
-        window.open("<%= request.getContextPath() %>/printorder.jsp?ordernr="+visadOrder);
+        window.open("<%= request.getContextPath() %>/printorder.jsp?wmsordernr="+visadOrder);
     } else {
         alert(r["errorMessage"]);
     }
@@ -133,7 +133,7 @@ function skickaTillPlock() {
             }
     }
   };
-  xhttp.open("GET", "/wms/ac?ac=markorderwms&ordernr=" + visadOrder + "&anvandare=" + encodeURIComponent(anv), true);
+  xhttp.open("GET", "/wms/ac?ac=markorderwms&wmsordernr=" + visadOrder + "&anvandare=" + encodeURIComponent(anv), true);
   xhttp.send();
 }
             </script>
@@ -222,7 +222,7 @@ function skickaTillPlock() {
     
     
     <%
-      q = "select o1.wmsordernr as ordernr, o1.datum,   o1.namn, o1.status, " + 
+      q = "select o1.wmsordernr, o1.datum,   o1.namn, o1.status, " + 
               " sum(case when o2.best > 0 then 1 else 0 end) as rader, o1.levdat, " +
               " sum(case when (o2.best > 0 and l.ilager > 0) or (s.finnsilager>0) then 1 else 0 end) as raderilager " +
               " from wmsorder1 o1 " +
@@ -284,13 +284,13 @@ function skickaTillPlock() {
                 
                 
             %>
-                <tr class="link" id="trsnabbrader<%= rs.getString("ordernr") %>" onkeydown="orderlistKey(event)" tabindex="<%= tabindex %>" onfocus="visaSnabbrader('<%= rs.getString("ordernr") %>')" onclick="visaSnabbrader('<%= rs.getString("ordernr") %>')">
-                    <td class="o-ordernr"> <%= rs.getString("ordernr") %><br><%= rs.getString("datum") %> </td>
+                <tr class="link" id="trsnabbrader<%= rs.getString("wmsordernr") %>" onkeydown="orderlistKey(event)" tabindex="<%= tabindex %>" onfocus="visaSnabbrader('<%= rs.getString("wmsordernr") %>')" onclick="visaSnabbrader('<%= rs.getString("wmsordernr") %>')">
+                    <td class="o-ordernr"> <%= rs.getString("wmsordernr") %><br><%= rs.getString("datum") %> </td>
                 <td class="o-datum"><%= rs.getString("status") %></td>
                 <td class="o-namn"><%= Const.toHtml(rs.getString("namn")) %></td>
                 <td><div style="width: 100px; height: 20px; text-align: center; overflow: visible; white-space: nowrap; border: 1px solid grey; position:relative;"><div style="top: 0; left:0; position: absolute; line-height: 20px; width: 100%; height: 100%; text-align: center; z-index: 10;"><%= raderIlager %>/<%= rader %></div><div style="background-color: lightgreen; position: absolute; top: 0; left: 0; height: 100%; width:<%= proc %>%"></div></div><b><%= Const.toStr(rs.getString("levdat")) %></b></td>
-                <td style="display: none" id="snabbrader<%= rs.getString("ordernr") %>">
-                    <% request.setAttribute("ordernr", rs.getString("ordernr")); %>
+                <td style="display: none" id="snabbrader<%= rs.getString("wmsordernr") %>">
+                    <% request.setAttribute("wmsordernr", rs.getString("wmsordernr")); %>
                     <jsp:include page="/WEB-INF/getorderrader.jsp" flush="true" />
                 </td>
 

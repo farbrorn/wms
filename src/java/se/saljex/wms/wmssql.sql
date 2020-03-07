@@ -385,3 +385,41 @@ UNION ALL
 
 ALTER TABLE wmsorder1
   OWNER TO sxfakt;
+
+
+
+
+
+
+
+--Returnerar int-delen av ett wmsordernr.
+create or replace function wmsordernr2int(_wmsordernr text)
+   returns int
+as
+$$
+begin
+  begin
+    return substring(trim($1),4)::int;
+  exception 
+    when others then begin
+	return substring(trim($1),4, lenght(trim($1))-5)::int; --Hantera nummer i format 'AB-12345-R' likväsl som 'AB-12345'
+	  exception 
+	    when others then
+		return null;
+       end;
+  end;
+end;
+$$
+language plpgsql;
+
+
+
+
+
+
+
+
+
+
+create table wmskollin (kolliid serial primary key, wmsordernr varchar not null, kollityp varchar, langdcm integer, breddcm integer, hojdcm integer, viktkg integer);
+create table wmsorderplock (wmsordernr varchar not null, pos integer not null, artnr varchar not null, ilager real, best real, bekraftat real, crts timestamp default current_timestamp, primary key (wmsordernr, pos));
