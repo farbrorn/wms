@@ -23,29 +23,17 @@ import javax.sql.DataSource;
 @WebListener
 public class StartupListener implements ServletContextListener {
      private ScheduledExecutorService scheduler;
-	@Resource(mappedName = "sxadm")
-	private DataSource sxadm;
-
-        Connection con;
         
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        System.out.println("Startar timerservice");
-        try {
-            con = sxadm.getConnection();
-            scheduler = Executors.newSingleThreadScheduledExecutor();
-            scheduler.scheduleAtFixedRate(new OverforHotOrder(con), 0, 10, TimeUnit.SECONDS);
-        } catch (SQLException e) {
-            System.out.println("Fel vid skapande av SQL Connection: " + e.getMessage());
-        }
+        Const.log("Startar timerservice");
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(new OverforHotOrder(), 0, 10, TimeUnit.SECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new OverforArtikellistaFromPPG(), 0, 4, TimeUnit.HOURS);
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) {
-        try {
-            con.close();
-        } catch (SQLException e) {
-            System.out.println("Fel sql: " + e.getMessage());
-        }
-    }    
+    public void contextDestroyed(ServletContextEvent sce) {
+    }
+    
 }

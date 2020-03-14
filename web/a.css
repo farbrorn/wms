@@ -178,7 +178,7 @@ table {
 
 
 @media print {
-    .sidhuvud, .ordergrupper, .orderlista, .order-knappar, .order-snabbrader {
+    .sidhuvud, .ordergrupper, .orderlista, .order-knappar, .order-snabbrader, .no-print{
         display: none;
     }
     .order {

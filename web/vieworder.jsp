@@ -8,7 +8,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
     String ordernr=null;
-    ordernr= request.getParameter("ordernr");
+    ordernr= request.getParameter("wmsordernr");
     %>
 <!DOCTYPE html>
 <html>

@@ -12,7 +12,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Date;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +24,8 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author ulf
  */
-@WebServlet(name = "ActionServlet", urlPatterns = {"/ac"})
+ @MultipartConfig
+ @WebServlet(name = "ActionServlet", urlPatterns = {"/ac"})
 public class ActionServlet extends HttpServlet {
 
     /**
@@ -53,11 +56,35 @@ public class ActionServlet extends HttpServlet {
                 jb.addField("test", "Testvärde");
                 out.print(jb.getJsonString());
 
+            } else if ("avbrytwmsorder".equals(ac)) {
+                response.setContentType("application/json;charset=UTF-8");
+                try {
+                    if (!Const.doesUserExists(con, anvandare)) throw new ErrorException("Användare är ogiltigt.");
+
+                    ps = con.prepareStatement("select wmsavbrytorder(?,?)");
+                    ps.setString(1, wmsOrdernr);
+                    ps.setString(2, anvandare);
+                    ps.executeQuery();
+                   
+                    jb.addResponseOK();
+                }
+                catch (SQLException e) {
+                    jb.addResponseError("SQLException: " + e.toString());
+                    try { con.rollback(); } catch (SQLException ee) {}
+                    Const.log(e.toString());
+                }
+                catch(ErrorException e) {
+                    jb.addResponseError(e.getMessage());
+                    try { con.rollback(); } catch (SQLException ee) {}
+                }
+                finally {
+                    out.print(jb.getJsonString());
+                }
+        
             } else if ("saveredigeradorder".equals(ac)) {
                 response.setContentType("application/json;charset=UTF-8");
                 try {
                     con.setAutoCommit(false);
-
                     ps = con.prepareStatement("select * from wmsorder1 o1 where wmsordernr=? and orgordernr=wmsordernr2int(?)");
                     ps.setString(1, wmsOrdernr);
                     ps.setString(2, wmsOrdernr);
@@ -72,11 +99,13 @@ public class ActionServlet extends HttpServlet {
                     rs = ps.executeQuery();
                     
                     PreparedStatement psInsert = con.prepareStatement("insert into wmsorderplock (wmsordernr, pos, artnr) values (?,?,?) on conflict do nothing");
-                    PreparedStatement psUpdate = con.prepareStatement("update wmsorderplock set ilager=?, best=?, bekraftat=? whare wmsordernr=? and pos=?");
+                    PreparedStatement psUpdate = con.prepareStatement("update wmsorderplock set ilager=?, best=?, bekraftat=? where wmsordernr=? and pos=?");
                     String artnr;
                     Double ilager;
                     Double best;
                     Double bekraftat;
+                    final String nbsp = Character.toString((char)160);// non breaking space
+                    String tal="";
                     while (rs.next()) {
                         int pos;
                         if (rs.getString("artnr") != null && rs.getString("artnr").length()>0) {
@@ -87,15 +116,34 @@ public class ActionServlet extends HttpServlet {
                             psInsert.setString(3, artnr);
                             psInsert.executeUpdate();
                             
-                            try { ilager = Double.parseDouble(request.getParameter("ilager" + pos)); }
+                            try {
+                                tal = request.getParameter("ilager" + pos).replace(",",".").replace(" ", "").replace(nbsp, "");
+                                ilager = Double.parseDouble(tal); 
+                            }
                             catch (NullPointerException ne) { ilager=null; }
-                            catch (NumberFormatException fe) { throw new ErrorException("Felaktigt värde (" + request.getParameter("ilager" + pos) + ") ilager position " + pos); }
-                            try { best = Double.parseDouble(request.getParameter("best" + pos)); }
+                            catch (NumberFormatException fe) { 
+                                if(request.getParameter("ilager" + pos).length()<1) ilager=null; else throw new ErrorException("Felaktigt värde artikel " + artnr + " (" + request.getParameter("ilager" + pos) + ")"
+                                    + "(" + tal +")"
+                                    + " ilager position " + pos); 
+                            }
+
+                            try { 
+                                tal = request.getParameter("best" + pos).replace(",",".").replace(" ", "").replace(nbsp, "");
+                                best = Double.parseDouble(tal); 
+                            }
                             catch (NullPointerException ne) { best=null; }
-                            catch (NumberFormatException fe) { throw new ErrorException("Felaktigt värde (" + request.getParameter("best" + pos) + ") best position " + pos); }
-                            try { bekraftat = Double.parseDouble(request.getParameter("bekraftat" + pos)); }
+                            catch (NumberFormatException fe) { 
+                                if(request.getParameter("best" + pos).length()<1) best=null; else throw new ErrorException("Felaktigt värde artikel " + artnr + " (" + request.getParameter("best" + pos) + ")"
+                                    + "(" + tal +")"
+                                    + " best position " + pos); 
+                            }
+
+                            try { 
+                                tal = request.getParameter("bekraftat" + pos).replace(",",".").replace(" ", "").replace(nbsp, "");
+                                bekraftat = Double.parseDouble(tal); 
+                            }
                             catch (NullPointerException ne) { bekraftat=null; }
-                            catch (NumberFormatException fe) { throw new ErrorException("Felaktigt värde (" + request.getParameter("bekraftat" + pos) + ") bekraftat position " + pos); }
+                            catch (NumberFormatException fe) { if(request.getParameter("bekraftat" + pos).length()<1) bekraftat=null; else throw new ErrorException("Felaktigt värde artikel " + artnr + " (" + request.getParameter("bekraftat" + pos) + ") bekraftat position " + pos); }
                             
                             if (ilager==null) psUpdate.setNull(1, java.sql.Types.DOUBLE); else psUpdate.setDouble(1, ilager);
                             if (best==null) psUpdate.setNull(2, java.sql.Types.DOUBLE); else psUpdate.setDouble(2, best);
@@ -106,18 +154,29 @@ public class ActionServlet extends HttpServlet {
                             
                         }
                     }
-                    
+                    if ("true".equals(request.getParameter("fardigmarkera"))) {
+                        ps = con.prepareStatement("select wmsfardigmarkeraorder(?); wmsordersamfak(?,?)");
+                        ps.setString(1, wmsOrdernr);
+                        ps.setString(2, request.getParameter("anvandare"));
+                        ps.setString(3, wmsOrdernr);
+                        ps.executeQuery();
+                    }
                     con.commit();
                     jb.addResponseOK();
                 }
                 catch (SQLException e) {
                     jb.addResponseError("SQLException: " + e.toString());
                     try { con.rollback(); } catch (SQLException ee) {}
-                    System.out.print(e.toString());
+                    Const.log(e.toString());
                 }
                 catch(ErrorException e) {
                     jb.addResponseError(e.getMessage());
                     try { con.rollback(); } catch (SQLException ee) {}
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    jb.addResponseError(e.getMessage());
+                    try { con.rollback(); } catch (SQLException ee) {}                    
                 }
                 finally {
                     out.print(jb.getJsonString());
@@ -152,7 +211,7 @@ public class ActionServlet extends HttpServlet {
                 catch (SQLException e) {
                     jb.addResponseError("SQLException: " + e.toString());
                     try { con.rollback(); } catch (SQLException ee) {}
-                    System.out.print(e.toString());
+                    Const.log(e.toString());
                 }
                 catch(ErrorException e) {
                     jb.addResponseError(e.getMessage());
@@ -218,7 +277,7 @@ public class ActionServlet extends HttpServlet {
                 request.setAttribute("wmsordernr", wmsOrdernr);
                 request.getRequestDispatcher("WEB-INF/getkollilist.jsp").include(request, response);
             } else {
-                jb.addResponseError("Ogiltigt kommando");
+                jb.addResponseError("Ogiltigt kommando: " + ac );
                 out.print(jb.getJsonString());
             }
         }

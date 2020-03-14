@@ -8,6 +8,9 @@ package se.saljex.wms;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
 /**
@@ -15,22 +18,29 @@ import javax.sql.DataSource;
  * @author ulf
  */
 public class OverforHotOrder implements Runnable{
-    private Connection con;
     private ResultSet rs;
-    public OverforHotOrder(Connection con) {
-        super();
-        this.con=con;
-    }
 
     @Override
     public void run() {
+        
+            Connection conSx=null;
             try {
-                rs = con.createStatement().executeQuery("select ppgexportorder(wmsordernr,'00') from wmsorder1 where status='Sparad' and lastdatum is null and fraktbolag='HOT PICK'");
+                Context initContext = new InitialContext();
+                conSx=((DataSource) initContext.lookup("sxadm")).getConnection();
+                rs = conSx.createStatement().executeQuery("select ppgexportorder(wmsordernr,'00') from wmsorder1 where status='Sparad' and lastdatum is null and fraktbolag='HOT PICK'");
+                int rowCn=0;
+                
                 while(rs.next()) {
-                    System.out.println("HOT PICK order " + rs.getString(1));
+                    rowCn++;
+                    Const.log("Rad: " + rowCn + " HOT PICK order: " + rs.getString(1));
+                    Const.log("______");
                 }
-            } catch (SQLException e) {
-                System.out.println("Fel vid anrop från Timer. SQL: " + e.getMessage());
+            } catch (Exception e) {
+                Const.log("Fel vid anrop från Timer overforHotOrder: " + e.getMessage());
+                e.printStackTrace();
+            }
+            finally {
+                try { conSx.close(); } catch (Exception e) {}
             }
     }
     

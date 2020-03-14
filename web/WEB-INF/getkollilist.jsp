@@ -17,10 +17,9 @@
     ps.setString(1, wmsordernr);
     ResultSet rs = ps.executeQuery();
 %>
-    <%= wmsordernr %>
 
 <table>
-    <tr><td>Kollityp</td><td>Vikt (kg)</td><td>Längd (cm)</td><td>Bredd (cm)</td><td>Höjd (cm)</td><td></td></tr>
+    <tr class="tdrubrikrad"><td>Kollityp</td><td>Vikt (kg)</td><td>Längd (cm)</td><td>Bredd (cm)</td><td>Höjd (cm)</td><td></td></tr>
 <% while(rs.next()) { %>
 <tr>
     <td><%= Const.toHtml(rs.getString("kollityp")) %></td>
@@ -28,7 +27,7 @@
     <td><%= rs.getInt("langdcm") %></td>
     <td><%= rs.getInt("breddcm") %></td>
     <td><%= rs.getInt("hojdcm") %></td>
-    <td><a onclick="deleteKolli(<%= rs.getInt("kolliid") %>)" href="">Ta bort</a></td>
+    <td class="no-print"><a onclick="deleteKolli(<%= rs.getInt("kolliid") %>)" href="">Ta bort</a></td>
     
 </tr>
 

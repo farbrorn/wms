@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
@@ -22,12 +23,16 @@ import javax.servlet.http.HttpServletRequest;
  * @author ulf
  */
 public class Const {
+    private static final SimpleDateFormat simpleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                         
     public static Connection getConnection(HttpServletRequest request) {
         return (Connection)request.getAttribute("sxconnection");
     }
- //   public static Connection getPPGConnection(HttpServletRequest request) {
- //       return (Connection)request.getAttribute("ppgconnection");
- //   }
+ public static Connection getPPGConnection(HttpServletRequest request) {
+        return (Connection)request.getAttribute("ppgconnection");
+    }
+ 
 	public static final  String ORDER_STATUS_SPARAD = "Sparad";
 	public static final  String ORDER_STATUS_DIREKTLEV = "Direkt";
 	public static final  String ORDER_STATUS_SIMPLEORDER = "Simple";
@@ -62,6 +67,10 @@ public class Const {
         //public static int[] getDbSchemasOrdernrOffsets() { return dbSchemasOrdernrOffsets; }
 //        public static String[] getOrdernrPrefix() { return ordernrPrefix; }
 
+        public static void log(String s) {
+            System.out.println(Const.getFormatDateTime(new Date()) + " " + s);        
+        }
+        
         public static int getLagerNr() { return 0; }
         public static String getLogoUrl(Connection con, String dbSchema) throws SQLException {
             String dbPrefix = dbSchema + ".";
@@ -175,10 +184,15 @@ public class Const {
         
     public static String getFormatDate(Date d) {
 		 if (d != null) {
-			 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			 return simpleDateFormat.format(d);
 		 } else { return ""; }
     }
+    public static String getFormatDateTime(Date d) {
+		 if (d != null) {
+			 return simpleDateTimeFormat.format(d);
+		 } else { return ""; }
+    }
+    
     public static String getFormatNumber(Double tal, int decimaler) {
 		  if (tal == null) return "";
         NumberFormat nf;

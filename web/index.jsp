@@ -110,6 +110,9 @@
                 }
             }
             
+            function redigeraOrder() {
+                window.open("<%= request.getContextPath() %>/redigeraorder.jsp?wmsordernr="+visadOrder);
+            }
             function visaOrder() {
                 window.open("<%= request.getContextPath() %>/vieworder.jsp?wmsordernr="+visadOrder);
             }
@@ -304,7 +307,8 @@ function skickaTillPlock() {
         <div style="margin-bottom: 6px;" class="order-knappar">
             <button onclick="skickaTillPlock()">Skicka till plock</button>
             <button onclick="visaOrder()">Visa order</button>
-        </div>
+            <button onclick="redigeraOrder()">Redigera order</button>
+         </div>
         <div id="snabbrader">
         </div>
     </div>

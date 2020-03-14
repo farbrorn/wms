@@ -32,11 +32,12 @@ ps.setString(1, ordernr);
             + " left outer join (select masterordername, hostidentification, sum(quantityconfirmed::numeric) as quantityconfirmed from ppgorderpick where motivetype not in (1,3,5,6,10) group by masterordername, hostidentification) ppg on ppg.masterordername = o1.wmsordernr and ppg.hostidentification::numeric=o2.pos "
             + " where o2.wmsordernr=? order by pos",ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 */
-   ps = con.prepareStatement("select o2.*, l.ilager, l.lagerplats, a.refnr, a.plockinstruktion, s.finnsilager, ppg.quantityconfirmed from " + 
+   ps = con.prepareStatement("select o2.*, l.ilager, l.lagerplats, a.refnr, a.plockinstruktion, s.finnsilager, coalesce(op.bekraftat,ppg.quantityconfirmed) as quantityconfirmed from " + 
     " wmsorder2 o2 join wmsorder1 o1 on o1.wmsordernr=o2.wmsordernr  and o1.orgordernr=o2.orgordernr "
             + " left outer join lager l on l.artnr=o2.artnr and l.lagernr=o1.lagernr left outer join artikel a on a.nummer=o2.artnr "
             + " left outer join stjarnrad s on s.stjid=o2.stjid and o2.stjid>0 "
             + " left outer join (select masterordername, hostidentification, sum(quantityconfirmed::numeric) as quantityconfirmed from ppgorderpick where motivetype not in (1,3,5,6,10) group by masterordername, hostidentification) ppg on ppg.masterordername = o1.wmsordernr and ppg.hostidentification::numeric=o2.pos "
+            + " left outer join wmsorderplock op on op.wmsordernr=o2.wmsordernr and op.pos=o2.pos "
             + " where o2.wmsordernr=? and o2.orgordernr= wmsordernr2int(?) order by pos",ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
    ps.setString(1, ordernr);
@@ -139,9 +140,9 @@ ps.setString(1, ordernr);
                                 String quantityConfirmedString=null;
                                 if (quantityConfirmed!=null) {
                                     if (quantityConfirmed.equals(o2.getDouble("best"))) {
-                                        quantityConfirmedString = "( &#10004; )";
+                                        quantityConfirmedString = "[ &#10004; ]";
                                     } else { 
-                                        quantityConfirmedString = "(" + Const.getFormatNumber(quantityConfirmed) + ")"; 
+                                        quantityConfirmedString = "[ " + Const.getFormatNumber(quantityConfirmed) + " ]"; 
                                     }
                                 } else quantityConfirmedString = "______";
                             %>

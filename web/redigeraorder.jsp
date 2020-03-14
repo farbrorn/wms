@@ -3,12 +3,14 @@
     Created on : 2020-mar-06, 12:27:42
     Author     : ulf
 --%>
+<%@page import="java.util.HashMap"%>
 <%@page import="java.sql.ResultSet"%>
 <%@page import="java.sql.PreparedStatement"%>
 <%@page import="se.saljex.wms.Const"%>
 <%@page import="java.sql.Connection"%>
 <%            
     Connection con=Const.getConnection(request); 
+    Connection ppgcon=Const.getPPGConnection(request);
     String wmsordernr = (String)request.getParameter("wmsordernr");
 %>
 <%
@@ -46,7 +48,7 @@
                 border: none;
             }
             .tdrubrikrad {
-                fons-size: 60%;
+                font-size: 80%;
                 font-weight: bold;
                 background-color: grey;
             }
@@ -57,8 +59,33 @@
     function setFullevRad(row) {
         document.getElementById("i_bekraftat" + row).value = document.getElementById("bestantal" + row).innerHTML;
     }
+
+    function avbrytOrder() {
+        if (!confirm("Vill du avbryta plock av denna order, och markera ordern som Sparad?")) return; 
+        var anv = prompt("Bekräfta användare");
+        var XHR= new XMLHttpRequest();
+        XHR.addEventListener( "load", function(event) {
+            try {
+                var r = JSON.parse(event.target.responseText);
+                if (r["response"]=="OK") location.reload(); else alert(r["errorMessage"]);
+             } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
+        } );
+        XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
+        XHR.open( "POST", "ac?ac=avbrytwmsorder&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) );
+        XHR.send();
+    }    
+
+    function skrivutOrder() {
+        window.open("<%= request.getContextPath() %>/vieworder.jsp?wmsordernr=<%= wmsordernr %>");
+    }
     
-    function sparaOrder() {
+    function fardigmarkeraOrder() {
+        doSparaOrder(true);
+    }
+    function sparaOrder() { doSparaOrder(false); }
+
+    function doSparaOrder(fardigmarkera) {
+        var anv = prompt("Bekräfta användare");
        var rowcn = 0;
        var inp;
        var err="";
@@ -69,7 +96,32 @@
            var v = inp.value.replace(",",".").trim();
            if (isNaN(v) || v == null) err=err+"Rad " + rowcn + " ogiltigt antal.   ";
        }
-       if (err.length > 0) alert("Kan inte spara. Följande fel behöver åtgärdas: " + err);
+       if (err.length > 0) 
+           alert("Kan inte spara. Följande fel behöver åtgärdas: " + err); 
+       else {
+            var form=document.getElementById("oform");
+            var XHR= new XMLHttpRequest(),
+                FD=new FormData(form);
+            XHR.addEventListener( "load", function(event) {
+                try {
+                        var r = JSON.parse(event.target.responseText);
+                        if (r["response"]=="OK") {
+                            alert("Sparad OK!")
+    //                        window.open("<%= request.getContextPath() %>/printorder.jsp?wmsordernr="+visadOrder);
+                        } else {
+                            alert(r["errorMessage"]);
+                        }
+                } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
+            } );
+            
+            XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
+            XHR.open( "POST", "ac?ac=saveredigeradorder" );
+            if (fardigmarkera) {
+                FD.append("fardigmarkera","true");
+                FD.append("anvandare",anv);
+            }
+            XHR.send( FD );
+       }
     }
     
     function deleteKolli(kolliid) {
@@ -119,7 +171,42 @@
     ps.setString(1, wmsordernr);
     ps.setString(2, wmsordernr);
     o2 = ps.executeQuery();
+    
+
+    HashMap<Integer, String> lagerplatser = new HashMap<Integer, String>();
+    try { //PPG-connection kan vara null eller krångla, och då bryter vi bara tyst
+        PreparedStatement ppgPs = ppgcon.prepareStatement(
+                "select * from (\n" +
+           "SELECT 'Work' as typ, wo.WorkorderName as wmsordernr, ml.Hostidentification, mb.MaterialName, wl.Quantity, l.LocationName FROM WORKORDERLINE WL JOIN Workorder WO ON WO.WorkorderId = WL.WorkorderId\n" +
+           "JOIN LocContentbreakdown LB on lb.LocContentbreakdownId = wl.LocContentbreakdownId\n" +
+           "join Materialbase mb on mb.MaterialId = wl.MaterialId\n" +
+           "join LocContent lc on lc.LocContentId=lb.LocContentId\n" +
+           "join Location l on l.LocationId = lc.LocationId\n" +
+           "join Masterorderline ml on ml.MasterorderlineId = wl.MasterorderlineId\n" +
+           "union all\n" +
+           "select 'History' as typ, h.MasterorderName ,hl.Hostidentification, h.MaterialName, h.QuantityConfirmed, picklocationname \n" +
+           "from History h \n" +
+           "join HistoryMasterorderline hl on hl.HistMasterorderlineId = h.HistMasterorderlineId\n" +
+           "where h.MotiveType=0\n" +
+           ") a \n" +
+           "where wmsordernr=?\n" +
+           "order by Hostidentification"
+        );
+        ppgPs.setString(1, wmsordernr);
+        ResultSet ppgRs  = ppgPs.executeQuery();
+        while(ppgRs.next()) {
+            String s = lagerplatser.get(ppgRs.getInt("hostidentification"));
+            if (s==null ) s=""; else s="<br>";
+            s=s+Const.toHtml(ppgRs.getString("quantity") + " / " + ppgRs.getString("locationname"));
+            lagerplatser.put(ppgRs.getInt("hostidentification"), s);
+        }
+
+    } catch (Exception e) { 
+        Const.log("Fel vid utskrift av lagerplatser (ppg-connection)." + e.getMessage()); 
+    }
+
 %>
+
 <% if (o1.next()) { %>
 <%    String logourl=Const.getLogoUrl(con, o1.getString("wmsdbschema")); %>
 <div class="order">
@@ -187,8 +274,8 @@
             </tr>
         </table>
   </div>
-    <form>
-        <input type="hidden" name="wmsordernr" value="<%= wmsordernr %>">
+                    <form id="oform" method="post" >
+                        <input type="hidden" name="wmsordernr" value="<%= wmsordernr %>">
 
   <div class="orderrader">
       <table>
@@ -207,10 +294,13 @@
             <% odd=!odd; %>
             <% rowcn++; %>
             <tr class="<%= odd ? "odd" : "even" %>" style="vertical-align: middle; height: 2em">
-                <td class=""><%= Const.toHtml(o2.getString("lagerplats")) %></td>
+                <td class="" style="font-size: 80%">
+                    <% String s = lagerplatser.get(o2.getInt("pos")); %>
+                    <%= s!=null ? s : Const.toHtml(o2.getString("lagerplats"))   %>
+                </td>
                 <td class=""><%= Const.toHtml(o2.getString("artnr")) %></td>
                 <td class=""><%= Const.toHtml(o2.getString("namn")) %></td>
-                <td id="bestantal<%= rowcn %>" class=""><%= Const.getFormatNumber(o2.getDouble("best")) %></td>
+                <td id="bestantal<%= rowcn %>" class="" style="font-weight: bold"><%= Const.getFormatNumber(o2.getDouble("best")) %></td>
                 <td class=""><%= Const.noNull(o2.getDouble("ilager")).compareTo(0.0)>0 ? "*" : "" %></td>
                 <td class=""><%= Const.toHtml(o2.getString("enh")) %></td>
                 <td><%= Const.getFormatNumber(o2.getDouble("ilager")) %></td>
@@ -225,9 +315,9 @@
                     if (bekraftat==null && quantityConfirmed!=null) bekraftat=quantityConfirmed;
                 %>
                 
-                <td><input id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber(bekraftat) %>" size="6"></td>
+                <td><input style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber(bekraftat) %>" ></td>
                 <td>
-                    <input type="button" value="&#10004;" onclick="setFullevRad(<%= rowcn %>)">
+                    <input class="no-print" type="button" value="&#10004;" onclick="setFullevRad(<%= rowcn %>)">
                     <input type="hidden" name="pos<%= rowcn %>" value="<%= o2.getInt("pos") %>">
                     <input type="hidden" name="ilager<%= rowcn %>" value="<%= Const.getFormatNumber(o2.getDouble("ilager")) %>">
                     <input type="hidden" name="best<%= rowcn %>" value="<%= Const.getFormatNumber(o2.getDouble("best")) %>">
@@ -243,11 +333,14 @@
   </div>
     </form>
   
-  <div style="margin-top: 12px; text-align: right;">
+  <div class="no-print" style="margin-top: 12px; text-align: right;">
+      <input  onclick="avbrytOrder()" style="background-color: lightred; height: 2em; font-weight: normal;" type="button" value="Avbryt order" title="Avbryter hanteringen av order, nollställer alla plock och kollin samt sätter status Sparad.">
+      <input  onclick="skrivutOrder()" style="height: 2em; font-weight: normal;" type="button" value="Skriv ut">
+      <input  onclick="fardigmarkeraOrder()" style="background-color: lightgreen; height: 2em; font-weight: normal;" type="button" value="Färdigmarkera order" title="Markera ordern som färdiplockad och klar för lastning och fakturering.">
       <input  onclick="sparaOrder()" style="background-color: lightgreen; height: 3em; font-weight: bold;" type="button" value="Spara ändringar">
   </div>        
-        <div style="margin-top: 22px; padding-top: 8px; border-top: 1px solid black; ">
-        Lägg till kolli
+  <div style="margin-top: 22px; font-weight: bold; ">Kollin</div>
+  <div class="no-print" style="padding-top: 8px;  ">
         <table>
             <tr><td>Kollityp</td><td>Antal</td><td>Vikt per kolli (kg)</td><td>Längd (cm)</td><td>Bredd (cm)</td><td>Djup (cm)</td><td></td></tr>
             <tr>
@@ -272,7 +365,7 @@
         
 
         </div>
-        <DIV id="kollin">
+        <DIV id="kollin" style="margin-top: 12px;">
             <% request.setAttribute("wmsordernr", wmsordernr); %>
             <jsp:include page="/WEB-INF/getkollilist.jsp" flush="true" />
         </DIV>   

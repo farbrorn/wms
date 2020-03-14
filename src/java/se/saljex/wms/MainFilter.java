@@ -13,6 +13,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -31,7 +35,6 @@ public class MainFilter implements Filter {
 	@Resource(mappedName = "sxadm")
 	private DataSource sxadm;
 //	@Resource(mappedName = "ppgdb")
-//	@Resource(mappedName = "sxadm")
 //	private DataSource ppgdb;
     
     private static final boolean debug = true;
@@ -46,21 +49,31 @@ public class MainFilter implements Filter {
     
     public void doFilter(ServletRequest request, ServletResponse response,
             FilterChain chain)
+            
             throws IOException, ServletException {
+		Connection con2=null;
+        try {
+            Context initContext = new InitialContext();
+//            Context envContext = (Context) initContext.lookup("java:comp/env");
+//            DataSource ppgdb = (DataSource) envContext.lookup("ppgdb");
+            DataSource ppgdb = (DataSource) initContext.lookup("ppgdb");
+            con2=ppgdb.getConnection();
+        } catch (Exception e) { 
+            Const.log("Kan inte koppla till PPG-datakälla. " + e.getMessage()); e.printStackTrace(); 
+        }
+        
         
 		Connection con=null;
-//		Connection con2=null;
 		try {
 			con = sxadm.getConnection();
-//			con2 = ppgdb.getConnection();
 			request.setAttribute("sxconnection", con); 
-//			request.setAttribute("ppgconnection", con2); 
+			request.setAttribute("ppgconnection", con2); 
  			chain.doFilter(request,response);
 		} catch (SQLException e) {
 			Logger.getLogger("sx-logger").severe("SQL-Fel:" + e.getMessage()); e.printStackTrace();
 		} finally { 
                     try {con.close(); } catch (Exception eee) {}
-  //                  try {con2.close(); } catch (Exception eee) {}
+                    try {con2.close(); } catch (Exception eee) {}
                 }		
     }
 

@@ -26,7 +26,7 @@ if (ordernr!=null) {
     " wmsorder2 o2 join wmsorder1 o1 on o1.wmsordernr=o2.wmsordernr and o1.orgordernr=o2.orgordernr "
             + " left outer join lager l on l.artnr=o2.artnr and l.lagernr=o1.lagernr left outer join artikel a on a.nummer=o2.artnr "
             + " left outer join stjarnrad s on s.stjid=o2.stjid and o2.stjid>0 "
-            + " where o2.wmsordernr=? and o2.orgordernr= wmsordernr2int(?) order by pos");
+            + " where o1.wmsordernr=? and o1.orgordernr= wmsordernr2int(?) order by pos");
    ps.setString(1, ordernr);
    ps.setString(2, ordernr); // Optimering för att nyttja index i databas
    ResultSet o2=ps.executeQuery();
