@@ -4,15 +4,18 @@ CREATE OR REPLACE FUNCTION wmsorderaddrow(
     in_wmsordernr character varying,
     in_artnr character varying,
     in_antal real)
-  RETURNS void AS
+  RETURNS integer AS
 $BODY$
+declare
+    this_pos integer;
 begin
 	if not exists (select from wmsorder1 where wmsordernr=in_wmsordernr) then raise exception 'Ordernummer % saknas', in_wmsordernr; end if;
 	if substring(in_wmsordernr,1,2) = 'AB' then
-		perform sxfakt.orderaddrow(in_anvandare, (select orgordernr from wmsorder1 where wmsordernr=in_wmsordernr), in_artnr, in_antal);
+		select into this_pos sxfakt.orderaddrow(in_anvandare, (select orgordernr from wmsorder1 where wmsordernr=in_wmsordernr), in_artnr, in_antal);
 	elsif substring(in_wmsordernr,1,2) = 'AS' then
-		perform sxfakt.orderaddrow(in_anvandare, (select orgordernr from wmsorder1 where wmsordernr=in_wmsordernr), in_artnr, in_antal);
+		select into this_pos sxfakt.orderaddrow(in_anvandare, (select orgordernr from wmsorder1 where wmsordernr=in_wmsordernr), in_artnr, in_antal);
 	end if;
+    return this_pos;
 end;
 $BODY$
   LANGUAGE plpgsql VOLATILE
@@ -35,11 +38,11 @@ if not found then raise exception 'Order % hittades inte.', pl_wmsordernr; end i
 if (substring(pl_wmsordernr,1,2)) = 'AS' then
 		update sxasfakt.order1 set status=pl_orderstatus where ordernr = (select orgordernr from wmsorder1 where wmsordernr=pl_wmsordernr);
 		update sxasfakt.order2 set wmslock= case when pl_orderlock then current_timestamp else null end where ordernr = (select orgordernr from wmsorder1 where wmsordernr=pl_wmsordernr);		
-		insert into sxasfakt.orderhand (ordernr, datum, tid, anvandare, handelse ) select orgordernr, current_date,current_time,pl_anvandare,pl_orderhandelse from wmsorder1 where wmsordernr=pl_wmsordernr;
+		insert into sxasfakt.orderhand (ordernr, datum, tid, anvandare, handelse ) select orgordernr, current_date,clock_timestamp()::time,pl_anvandare,pl_orderhandelse from wmsorder1 where wmsordernr=pl_wmsordernr;
 elsif (substring(pl_wmsordernr,1,2)) = 'AB' then
 		update sxfakt.order1 set status=pl_orderstatus where ordernr = (select orgordernr from wmsorder1 where wmsordernr=pl_wmsordernr);
 		update sxfakt.order2 set wmslock= case when pl_orderlock then current_timestamp else null end where ordernr = (select orgordernr from wmsorder1 where wmsordernr=pl_wmsordernr);		
-		insert into sxfakt.orderhand (ordernr, datum, tid, anvandare, handelse ) select orgordernr, current_date,current_time,pl_anvandare,pl_orderhandelse from wmsorder1 where wmsordernr=pl_wmsordernr;
+		insert into sxfakt.orderhand (ordernr, datum, tid, anvandare, handelse ) select orgordernr, current_date,clock_timestamp()::time,pl_anvandare,pl_orderhandelse from wmsorder1 where wmsordernr=pl_wmsordernr;
 end if;
 
 end
@@ -117,7 +120,7 @@ case when substring(o2.artnr,1,1)='*' then replace(o2.artnr,'*','#') || '-' || s
  o2.namn, a.plockinstruktion, o2.best * -1, 
  o2.enh || ' Förp: ' || case when a.forpack <= 0 then 1 else a.forpack end || '/' || kop_pack || ' Odelbart: ' || case when a.minsaljpack <=0 then 1 else a.minsaljpack end, 
  a.bestnr || ' ' || rsk || ' ' || enummer || ' ' || refnr , o2.pos,
- 0, case when o1.fraktbolag='HOT PICK' then 4 else 0 end,
+ 0, case when o1.fraktbolag='HOT PICK' then 4 else 2 end,
  case when o1.levdat is not null then o1.levdat else current_date end
 from wmsorder1 o1 join wmsorder2 o2 on o1.wmsordernr=o2.wmsordernr left outer join 
 sxfakt.artikel a on a.nummer=o2.artnr 
@@ -129,8 +132,6 @@ end
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION ppgexportorder(integer)
-  OWNER TO sxfakt;
 
 
 
@@ -519,6 +520,7 @@ create table wmsorderplock (wmsordernr varchar not null, pos integer not null, a
 
 
 create table ppgartiklar(artnr varchar primary key, crts timestamp default current_timestamp);
+create table ppglager (artnr varchar, ilager numeric)
 
 create or replace function ppgsaveppgartikellista(in_artnr character varying[]) 
   RETURNS void AS
@@ -534,4 +536,38 @@ end;
 $BODY$
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER
   COST 100;
+
+
+
+
+
+
+
+
+
+create or replace function ppgsaveppglagerlista(in_artnr character varying[], in_antal numeric[]) 
+  RETURNS void AS
+$BODY$
+declare
+	this_cn integer;
+begin
+delete from ppglager;
+for this_cn in 1..array_upper(in_artnr,1) loop
+	insert into ppgartiklar (artnr, ilager) values (in_artnr[this_cn], in_ilager[this_cn]);
+end loop; 
+end;
+$BODY$
+  LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+  COST 100;
+
+
+
+
+
+
+
+
+create table wmssnabbartiklar (artnr varchar, typ varchar, sortorder integer default 0);
+insert into wmssnabbartiklar VALUES ('0030','redigeraorder', 0);
+
 

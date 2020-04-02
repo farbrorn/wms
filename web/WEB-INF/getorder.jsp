@@ -161,6 +161,25 @@ ps.setString(1, ordernr);
       </table>
   </div>
 <% } %>        
-        
+  <%
+   ps = con.prepareStatement("SELECT KOLLITYP, LANGDCM, BREDDCM, HOJDCM, VIKTKG FROM WMSKOLLIN WHERE WMSORDERNR=? ORDER BY KOLLIID");
+    ps.setString(1, ordernr);
+   ResultSet k=ps.executeQuery();
+%>
+<div style="margin-top: 12px; padding: 12px 24px 12px 24px;">
+Kollin
+<table>
+    <tr><td>Typ</td><td>Längd (cm)</td><td>Bredd (cm)</td><td>Höjd (cm)</td><td>Vikt (kg)</td></tr>
+<% while (k.next()) { %> 
+<tr>
+    <td><%= Const.toHtml(k.getString("kollityp")) %></td>
+    <td><%= k.getInt("langdcm") %></td>
+    <td><%= k.getInt("breddcm") %></td>
+    <td><%= k.getInt("hojdcm") %></td>
+    <td><%= k.getInt("viktkg") %></td>
+</tr>
+<% } %>
+</table>
+</div>    
 </div>
 <% } %>

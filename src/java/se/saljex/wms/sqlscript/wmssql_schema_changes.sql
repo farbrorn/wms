@@ -1,4 +1,4 @@
-alter table order2 add column wmslock timestamp default null;
+﻿alter table order2 add column wmslock timestamp default null;
 create or replace function wms_order2_wmslock_raiseexception() returns trigger as  $$ begin raise exception 'Ordern % är överförd till wms-system och kan inte ändras utan att den frigörs från wms-systemet.', OLD.ordernr; end $$ language plpgsql;
 create trigger order2_wmslock_check before update of artnr, namn, best, pos, ordernr or delete on order2 
 	for each row when (OLD.wmslock is not null) execute procedure wms_order2_wmslock_raiseexception();
@@ -12,10 +12,11 @@ CREATE OR REPLACE FUNCTION orderaddrow(
     in_antal real,
     in_pris real default null,
     in_rab real default null)
-  RETURNS void AS
+  RETURNS integer AS
 $BODY$
 declare
 	this_lagernr integer;
+        this_pos integer;
 begin
 	if not exists (select from order1 where ordernr=in_ordernr) then raise exception 'Ordernummer % saknas', in_ordernr; end if;
 	
@@ -28,8 +29,9 @@ begin
 	insert into orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
 		values (in_ordernr, current_date, current_time, in_anvandare, 'Ny rad', 0, 0, 0); 
 
-	insert into order2 (ordernr, pos, prisnr, dellev, artnr, namn, levnr, best, rab, lev, pris, rab, summa, konto, netto, enh, stjid)
-		select o1.ordernr, (select coalesce(max(pos),0)+1 from order2 where ordernr=o1.ordernr) , 1, 1, a.nummer, a.namn, a.lev, in_antal , 0, in_antal, 
+        select into this_pos coalesce(max(pos),0)+1 from order2 where ordernr=in_ordernr;
+	insert into order2 (ordernr, pos, prisnr, dellev, artnr, namn, levnr, best, lev, pris, rab, summa, konto, netto, enh, stjid)
+		select o1.ordernr, this_pos , 1, 1, a.nummer, a.namn, a.lev, in_antal , in_antal, 
 		case when in_pris is not null then in_pris else least (
 			case when kn.kundnetto_staf2>0 then  kn.kundnetto_staf2 else a.utpris end, 
 			case when kn.kundnetto_staf1>0 then  kn.kundnetto_staf1 else a.utpris end,
@@ -52,14 +54,20 @@ begin
 			values (in_artnr, this_lagernr, 0,0,0,0,0,0); 
 	end if;
 	update lager set iorder=iorder+in_antal where artnr=in_artnr and lagernr=this_lagernr;
-
+        return this_pos;
 end;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
 
-grant all on function orderaddrow to sxfakt;
 
+grant all on function orderaddrow (character varying,
+    integer,
+    character varying,
+    real,
+    real ,
+    real )
+ to sxfakt;
 
 
 

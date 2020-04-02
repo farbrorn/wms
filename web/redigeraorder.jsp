@@ -3,6 +3,7 @@
     Created on : 2020-mar-06, 12:27:42
     Author     : ulf
 --%>
+<%@page import="java.nio.charset.StandardCharsets"%>
 <%@page import="java.util.HashMap"%>
 <%@page import="java.sql.ResultSet"%>
 <%@page import="java.sql.PreparedStatement"%>
@@ -19,7 +20,7 @@
     ResultSet o2;
 %>
 
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="utf-8"%>
 <!DOCTYPE html>
 
 <html>
@@ -59,7 +60,20 @@
     function setFullevRad(row) {
         document.getElementById("i_bekraftat" + row).value = document.getElementById("bestantal" + row).innerHTML;
     }
-
+    function addSnabbRad(artnr) {
+        var anv = prompt("Bekräfta användare");
+        var XHR= new XMLHttpRequest();
+        XHR.addEventListener( "load", function(event) {
+            try {
+                var r = JSON.parse(event.target.responseText);
+                if (r["response"]=="OK") location.reload(); else alert(r["errorMessage"]);
+             } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
+        } );
+        XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
+        XHR.open( "POST", "ac?ac=addorderrad&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) + "&artnr=" + encodeURIComponent(artnr) );
+        XHR.send();
+        
+    }
     function avbrytOrder() {
         if (!confirm("Vill du avbryta plock av denna order, och markera ordern som Sparad?")) return; 
         var anv = prompt("Bekräfta användare");
@@ -119,6 +133,7 @@
             if (fardigmarkera) {
                 FD.append("fardigmarkera","true");
                 FD.append("anvandare",anv);
+                FD.append("hindrasamfakstatus","false");                
             }
             XHR.send( FD );
        }
@@ -303,11 +318,11 @@
                 <td id="bestantal<%= rowcn %>" class="" style="font-weight: bold"><%= Const.getFormatNumber(o2.getDouble("best")) %></td>
                 <td class=""><%= Const.noNull(o2.getDouble("ilager")).compareTo(0.0)>0 ? "*" : "" %></td>
                 <td class=""><%= Const.toHtml(o2.getString("enh")) %></td>
-                <td><%= Const.getFormatNumber(o2.getDouble("ilager")) %></td>
+                <td><%= Const.getFormatNumber0To2Dec(o2.getDouble("ilager")) %></td>
                 <td class=""></td>
                 <% Double quantityConfirmed = o2.getDouble("quantityconfirmed"); %>
                 <% if (o2.wasNull()) quantityConfirmed=null; %>
-                <td><%= quantityConfirmed!=null ? Const.getFormatNumber(quantityConfirmed) : "" %></td>
+                <td><%= quantityConfirmed!=null ? Const.getFormatNumber0To2Dec(quantityConfirmed) : "" %></td>
                 <%
                     Double bekraftat;
                     bekraftat = o2.getDouble("op_bekraftat");
@@ -315,7 +330,7 @@
                     if (bekraftat==null && quantityConfirmed!=null) bekraftat=quantityConfirmed;
                 %>
                 
-                <td><input style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber(bekraftat) %>" ></td>
+                <td><input style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber0To2Dec(bekraftat) %>" ></td>
                 <td>
                     <input class="no-print" type="button" value="&#10004;" onclick="setFullevRad(<%= rowcn %>)">
                     <input type="hidden" name="pos<%= rowcn %>" value="<%= o2.getInt("pos") %>">
@@ -333,6 +348,13 @@
   </div>
     </form>
   
+  <div class="no-print" style="margin-top: 12px; text-align: right;">
+      <% 
+          ResultSet rsSnabb = con.createStatement().executeQuery("select a.nummer, a.namn from wmssnabbartiklar sa join artikel a on a.nummer=sa.artnr where sa.typ='redigeraorder' order by sortorder");
+          while (rsSnabb.next()) {              %>
+              <button onclick="addSnabbRad('<%= rsSnabb.getString("nummer") %>')"><%= Const.toHtml(rsSnabb.getString("namn")) %></button>
+    <% } %>
+  </div>        
   <div class="no-print" style="margin-top: 12px; text-align: right;">
       <input  onclick="avbrytOrder()" style="background-color: lightred; height: 2em; font-weight: normal;" type="button" value="Avbryt order" title="Avbryter hanteringen av order, nollställer alla plock och kollin samt sätter status Sparad.">
       <input  onclick="skrivutOrder()" style="height: 2em; font-weight: normal;" type="button" value="Skriv ut">

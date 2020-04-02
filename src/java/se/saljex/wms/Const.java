@@ -193,6 +193,15 @@ public class Const {
 		 } else { return ""; }
     }
     
+    public static String getFormatNumber0To2Dec(Double tal) {
+		  if (tal == null) return "";
+        NumberFormat nf;
+		  nf = NumberFormat.getInstance();
+		  nf.setMaximumFractionDigits(2);
+		  nf.setMinimumFractionDigits(0);
+        return nf.format(tal);
+    }
+
     public static String getFormatNumber(Double tal, int decimaler) {
 		  if (tal == null) return "";
         NumberFormat nf;

@@ -44,6 +44,27 @@ public class OverforArtikellistaFromPPG implements Runnable {
             java.sql.Array ar  = conSx.createArrayOf("varchar", al.toArray());
             ps.setArray(1, ar);
             ps.executeQuery();
+            
+            rs = conPpg.prepareStatement("SELECT mb.MaterialName, sum(lc.QuantityCurrent) as ilager\n" +
+                "from Materialbase mb join LocContent lc on lc.MaterialId = mb.MaterialId \n" +
+                "where mb.MaterialName in (select MaterialName from History where QuantityConfirmed <> 0)\n" +
+                "group by mb.MaterialName\n" +
+                "having sum(lc.QuantityCurrent) <> 0").executeQuery();
+                // returnera endast artiklar med 0-saldo som någon gång har varit hanteerade av ppg
+                ps = conSx.prepareStatement("select ppgsaveppglagerlista(?,?)");
+                al = new ArrayList<>(12000);
+                ArrayList<Double> alAntal = new ArrayList<>(12000);
+                while (rs.next()) { 
+                    al.add(rs.getString(1));
+                    alAntal.add(rs.getDouble(2));
+                }
+                ar  = conSx.createArrayOf("varchar", al.toArray());
+                java.sql.Array arAntal  = conSx.createArrayOf("numeric", alAntal.toArray());
+                ps.setArray(1, ar);
+                ps.setArray(2, arAntal);
+                ps.executeQuery();
+                
+                
         } catch(Exception e) {
             Const.log("Kan inte föra vöver artikellista från ppg. " + e.getMessage());
             e.printStackTrace();

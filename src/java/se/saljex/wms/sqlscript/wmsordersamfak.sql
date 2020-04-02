@@ -1,6 +1,8 @@
 CREATE OR REPLACE FUNCTION wmsordersamfak(
     in_anvandare character varying,
-    in_wmsordernr varchar)
+    in_wmsordernr varchar,
+    in_hindrasamfakstatus boolean default false
+    )
   RETURNS void AS
 $BODY$
 declare
@@ -16,18 +18,18 @@ declare
 	this_status varchar;
 begin
 	if substring(in_wmsordernr,1,2) not in ('AB','AS') then raise exception 'Felaktigt prefix på ordernumret %', in_wmsordernr; end if;
-	if not exists (select from wmsorder1 where wmsordernr=in_wmsordernr) then raise exception 'Ordernummer % saknas', in_wmsordernr; end if;
-	if exists (select from wmsorder2 o2 left outer join wmsorderplock wp on wp.wmsordernr=o2.wmsordernr and o2.pos=wp.pos and o2.artnr=wp.artnr where o2.wmsordernr=in_wmsordernr and wp.pos is null) 
+	if not exists (select from wmsorder1 where wmsordernr=in_wmsordernr and orgordernr=wmsordernr2int(in_wmsordernr)) then raise exception 'Ordernummer % saknas', in_wmsordernr; end if;
+	if exists (select from wmsorder2 o2 left outer join wmsorderplock wp on wp.wmsordernr=o2.wmsordernr and o2.pos=wp.pos and o2.artnr=wp.artnr where o2.wmsordernr=in_wmsordernr and orgordernr=wmsordernr2int(in_wmsordernr) and o2.artnr is not null and length(o2.artnr) > 0 and wp.pos is null) 
 		then raise exception 'Det finns ej behandlade rader på order %', in_wmsordernr; end if;
-
-	select into this_status, this_ordernr, this_tillannanfilial  status, orgordernr, case when tillannanfilial <> 0 then true else false end from wmsorder1 where wmsordernr=in_wmsordernr;
-
-	if this_status not in ('Sparad','Utskriven','Avvakt') then raise exception 'Order % har status % och kan inte behandlas. Tillåtna statusar är Utskr, Sparad och Avvakt.', in_wmsordernr, this_status; end if;
-
+	select into this_status, this_ordernr, this_tillannanfilial  status, orgordernr, case when tillannanfilial <> 0 then true else false end from wmsorder1 where wmsordernr=in_wmsordernr and orgordernr=wmsordernr2int(in_wmsordernr);
+	if this_status not in ('Sparad','Utskr','Avvakt') then raise exception 'Order % har status % och kan inte behandlas. Tillåtna statusar är Utskr, Sparad och Avvakt.', in_wmsordernr, this_status; end if;
+	if this_tillannanfilial then raise exception 'Order % är en filialorder och måste hanteras manuellt.', in_wmsordernr; end if;
+        
 	this_isfelpris = false;
-	this_endastspara=false;
+	this_endastspara=in_hindrasamfakstatus;
 	this_ejrestorder=false;
-
+	
+this_nyordernr = 0;
 if substring(in_wmsordernr,1,2)='AB' then
 
 	if exists (select from sxfakt.order2 where ordernr=this_ordernr and ((pris*(1-rab/100) < netto and netto <>0) or (pris=0 and artnr not like '*UD%') )) then this_isfelpris=true; end if;
@@ -41,8 +43,8 @@ if substring(in_wmsordernr,1,2)='AB' then
 
 	update sxfakt.order2 set wmslock=null where ordernr=this_ordernr;
 	update sxfakt.order1 set status=this_sparstatus where ordernr=this_ordernr;
-	update sxfakt.order2 o2 set lev=(select bekraftat from wmsorderplock wp where wp.wmsordernr=in_wmsordernr and wp.pos=o2.pos) 
-		where ordernr=this_ordernr;
+	update sxfakt.order2 o2 set lev=coalesce((select bekraftat from wmsorderplock wp where wp.wmsordernr=in_wmsordernr and wp.pos=o2.pos),lev) 
+		where ordernr=this_ordernr and length(artnr)>0;
 
 	update sxfakt.lager set iorder = iorder - s.best 
 		from (select o1.lagernr, o2.artnr, o2.best from sxfakt.order1 o1 join order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_ordernr and o2.artnr not like '*%') s
@@ -80,7 +82,7 @@ if substring(in_wmsordernr,1,2)='AB' then
 		update sxfakt.order2 set summa=round((pris*best*(1-rab/100))::numeric,2) where ordernr=this_nyordernr;
 		
 		insert into sxfakt.orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
-			values (this_nyordernr, current_date, current_time, in_anvandare, 'Skapad', 0, 0, 0); 
+			values (this_nyordernr, current_date, clock_timestamp()::time, in_anvandare, 'Skapad', 0, 0, 0); 
 			
 		update sxfakt.lager set iorder = iorder + s.best 
 			from (select o1.lagernr, o2.artnr, o2.best from sxfakt.order1 o1 join sxfakt.order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_nyordernr and o2.artnr not like '*%') s
@@ -92,7 +94,7 @@ if substring(in_wmsordernr,1,2)='AB' then
 		from (select o1.lagernr, o2.artnr, o2.best from sxfakt.order1 o1 join sxfakt.order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_ordernr and o2.artnr not like '*%') s
 		where lager.lagernr=s.lagernr and lager.artnr=s.artnr; 
 	insert into sxfakt.orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
-		values (this_ordernr, current_date, current_time, in_anvandare, 'WMS ' || this_sparstatus, 0, 0, 0); 
+		values (this_ordernr, current_date, clock_timestamp()::time, in_anvandare, 'WMS ' || this_sparstatus, this_nyordernr, 0, 0); 
 
 elsif substring(in_wmsordernr,1,2)='AS' then
 	if exists (select from sxasfakt.order2 where ordernr=this_ordernr and ((pris*(1-rab/100) < netto and netto <>0) or (pris=0 and artnr not like '*UD%') )) then this_isfelpris=true; end if;
@@ -106,8 +108,8 @@ elsif substring(in_wmsordernr,1,2)='AS' then
 
 	update sxasfakt.order2 set wmslock=null where ordernr=this_ordernr;
 	update sxasfakt.order1 set status=this_sparstatus where ordernr=this_ordernr;
-	update sxasfakt.order2 o2 set lev=(select bekraftat from wmsorderplock wp where wp.wmsordernr=in_wmsordernr and wp.pos=o2.pos) 
-		where ordernr=this_ordernr;
+	update sxasfakt.order2 o2 set lev=coalesce((select bekraftat from wmsorderplock wp where wp.wmsordernr=in_wmsordernr and wp.pos=o2.pos),lev) 
+		where ordernr=this_ordernr and length(artnr)>0;
 
 	update sxasfakt.lager set iorder = iorder - s.best 
 		from (select o1.lagernr, o2.artnr, o2.best from sxasfakt.order1 o1 join order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_ordernr and o2.artnr not like '*%') s
@@ -145,7 +147,7 @@ elsif substring(in_wmsordernr,1,2)='AS' then
 		update sxasfakt.order2 set summa=round((pris*best*(1-rab/100))::numeric,2) where ordernr=this_nyordernr;
 		
 		insert into sxasfakt.orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
-			values (this_nyordernr, current_date, current_time, in_anvandare, 'Skapad', 0, 0, 0); 
+			values (this_nyordernr, current_date, clock_timestamp()::time, in_anvandare, 'Skapad', 0, 0, 0); 
 			
 		update sxasfakt.lager set iorder = iorder + s.best 
 			from (select o1.lagernr, o2.artnr, o2.best from sxasfakt.order1 o1 join sxasfakt.order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_nyordernr and o2.artnr not like '*%') s
@@ -157,7 +159,7 @@ elsif substring(in_wmsordernr,1,2)='AS' then
 		from (select o1.lagernr, o2.artnr, o2.best from sxasfakt.order1 o1 join sxasfakt.order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_ordernr and o2.artnr not like '*%') s
 		where lager.lagernr=s.lagernr and lager.artnr=s.artnr; 
 	insert into sxasfakt.orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
-		values (this_ordernr, current_date, current_time, in_anvandare, 'WMS ' || this_sparstatus, 0, 0, 0); 
+		values (this_ordernr, current_date, clock_timestamp()::time, in_anvandare, 'WMS ' || this_sparstatus, this_nyordernr, 0, 0); 
 
 
 end  if;
