@@ -13,6 +13,8 @@
     Connection con=Const.getConnection(request); 
     Connection ppgcon=Const.getPPGConnection(request);
     String wmsordernr = (String)request.getParameter("wmsordernr");
+    int lagernr = 0;
+    try { lagernr=Integer.parseInt(request.getParameter("lagernr")); } catch (Exception e) {}
 %>
 <%
     PreparedStatement ps;
@@ -20,13 +22,16 @@
     ResultSet o2;
 %>
 
-<%@page contentType="text/html" pageEncoding="utf-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+
 <!DOCTYPE html>
 
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Redigera order</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />        <title>Redigera order</title>
         <link rel="stylesheet" type="text/css" href="a.css">      
         <style>
             .odd {
@@ -53,6 +58,11 @@
                 font-weight: bold;
                 background-color: grey;
             }
+@media print {
+    .no-print{
+        display: none;
+    }
+
         </style>
         <%= Const.getBarcodeFontLinkHTML() %>
         
@@ -61,7 +71,8 @@
         document.getElementById("i_bekraftat" + row).value = document.getElementById("bestantal" + row).innerHTML;
     }
     function addSnabbRad(artnr) {
-        var anv = prompt("Bekräfta användare");
+//        var anv = prompt("Bekräfta användare");
+        var anv="00";
         var XHR= new XMLHttpRequest();
         XHR.addEventListener( "load", function(event) {
             try {
@@ -72,8 +83,8 @@
         XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
         XHR.open( "POST", "ac?ac=addorderrad&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) + "&artnr=" + encodeURIComponent(artnr) );
         XHR.send();
-        
     }
+    
     function avbrytOrder() {
         if (!confirm("Vill du avbryta plock av denna order, och markera ordern som Sparad?")) return; 
         var anv = prompt("Bekräfta användare");
@@ -114,28 +125,30 @@
            alert("Kan inte spara. Följande fel behöver åtgärdas: " + err); 
        else {
             var form=document.getElementById("oform");
-            var XHR= new XMLHttpRequest(),
-                FD=new FormData(form);
+            var FD = new FormData(form);
+            var XHR= new XMLHttpRequest();
             XHR.addEventListener( "load", function(event) {
                 try {
                         var r = JSON.parse(event.target.responseText);
                         if (r["response"]=="OK") {
-                            alert("Sparad OK!")
-    //                        window.open("<%= request.getContextPath() %>/printorder.jsp?wmsordernr="+visadOrder);
+                            document.getElementById("message").innerHTML = '<p style="font-weight: bold; color: green;">Sparad OK!</p>'; 
+                            document.getElementById("hamtaordernr").value='';
+                            document.getElementById("hamtaordernr").focus();
                         } else {
-                            alert(r["errorMessage"]);
+                            document.getElementById("message").innerHTML = '<p style="font-weight: bold; color: red;">' + r["errorMessage"] + '</p>'; 
                         }
                 } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
             } );
             
             XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
             XHR.open( "POST", "ac?ac=saveredigeradorder" );
+//            XHR.setRequestHeader("Content-Type","multipart/formdata; charset=utf-8");
             if (fardigmarkera) {
                 FD.append("fardigmarkera","true");
                 FD.append("anvandare",anv);
                 FD.append("hindrasamfakstatus","false");                
-            }
-            XHR.send( FD );
+             }
+            XHR.send(FD);
        }
     }
     
@@ -165,12 +178,26 @@
         , true);
         xhttp.send();
     }
+    function hamtaOrder() {
+       var wmsordernr= document.getElementById("hamtaordernr").value;
+       if (wmsordernr.size > 4) {
+           document.getElementById("nyorderform").submit();
+        }
+    }
 </script>
             
         
         
     </head>
     <body>
+        <div class="no-print" id="message"></div>
+        <div class="no-print" id="nyordernr" style="margin: 8px 0px 8px 0px; border: 1pk solid black; padding: 8px;">
+            <form id="nyorderform">
+                Hämta order: <input id="hamtaordernr" name="wmsordernr">
+                <button onclick="hamtaOrder()">Hämta</button>
+            </form> 
+        </div>
+        
 <%
     ps = con.prepareStatement("select o1.*, k.tel as k_tel, k.biltel as k_biltel from " + 
            " wmsorder1 o1 left outer join kund k on k.nummer=o1.kundnr where o1.wmsordernr=?");
@@ -285,11 +312,18 @@
                     <%= Const.toHtml(o1.getString("linjenr2")) %>
                     <%= Const.toHtml(o1.getString("linjenr3")) %>
                     </div>
+                    <div class="o1-rubrik">Status:</div>
+                    <div class="text">
+                        <%= Const.toHtml(o1.getString("status")) %>
+                    </div>
                 </td>
             </tr>
         </table>
   </div>
-                    <form id="oform" method="post" >
+                    <form id="oform" method="post" enctype="application/x-www-form-urlencoded">
+                <inpuut type="hidden" name="fardigmarkera" id="form-fardigmarkera">
+                <inpuut type="hidden" name="anvandare" id="form-anvandare">
+                <inpuut type="hidden" name="hindrasamfakstatus" id="form-hindrasamfakstatus">
                         <input type="hidden" name="wmsordernr" value="<%= wmsordernr %>">
 
   <div class="orderrader">
@@ -348,11 +382,11 @@
   </div>
     </form>
   
-  <div class="no-print" style="margin-top: 12px; text-align: right;">
+  <div class="no-print" style="margin-top: 12px; ">
       <% 
           ResultSet rsSnabb = con.createStatement().executeQuery("select a.nummer, a.namn from wmssnabbartiklar sa join artikel a on a.nummer=sa.artnr where sa.typ='redigeraorder' order by sortorder");
           while (rsSnabb.next()) {              %>
-              <button onclick="addSnabbRad('<%= rsSnabb.getString("nummer") %>')"><%= Const.toHtml(rsSnabb.getString("namn")) %></button>
+              <button style="margin: 0px 4px 0px 4px;" onclick="addSnabbRad('<%= rsSnabb.getString("nummer") %>')"><%= Const.toHtml(rsSnabb.getString("namn")) %></button>
     <% } %>
   </div>        
   <div class="no-print" style="margin-top: 12px; text-align: right;">

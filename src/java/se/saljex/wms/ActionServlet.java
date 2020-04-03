@@ -39,7 +39,7 @@ public class ActionServlet extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException { 
         try (PrintWriter out = response.getWriter()) {
             String wmsOrdernr= request.getParameter("wmsordernr");
             String anvandare=request.getParameter("anvandare");
@@ -49,7 +49,9 @@ public class ActionServlet extends HttpServlet {
             ResultSet rs;
             String ac=request.getParameter("ac");
             JsonBuilder jb = new JsonBuilder();
-
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
             if ("test".equals(ac)) {
                 response.setContentType("application/json;charset=UTF-8");
                 jb.addResponseOK();
@@ -163,18 +165,9 @@ public class ActionServlet extends HttpServlet {
                                     psInsert.setString(3, artnr);
                                     psInsert.executeUpdate();
 
-System.out.println ("Niumberformat ilager input:" + request.getParameter("ilager" + arrPos));
-System.out.println ("decoded:" + java.net.URLDecoder.decode(request.getParameter("ilager" + arrPos),"UTF-8"));
-                                    Enumeration<String> hn = request.getHeaderNames();
-                                    while (hn.hasMoreElements()) {
-                                        String hh = hn.nextElement();
-                                        System.out.println("hn: " + hh + ", " + request.getHeader(hh));
-                                        
-                                    }
-                                        
                                         
                                     try {
-                                        tal = request.getParameter("ilager" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "");
+                                        tal = request.getParameter("ilager" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "").replace("\u2212","-");
                                         ilager = Double.parseDouble(tal); 
                                     }
                                     catch (NullPointerException ne) { ilager=null; }
@@ -185,7 +178,7 @@ System.out.println ("decoded:" + java.net.URLDecoder.decode(request.getParameter
                                     }
 
                                     try { 
-                                        tal = request.getParameter("best" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "");
+                                        tal = request.getParameter("best" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "").replace("\u2212","-");
                                         best = Double.parseDouble(tal); 
                                     }
                                     catch (NullPointerException ne) { best=null; }
@@ -196,7 +189,7 @@ System.out.println ("decoded:" + java.net.URLDecoder.decode(request.getParameter
                                     }
 
                                     try { 
-                                        tal = request.getParameter("bekraftat" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "");
+                                        tal = request.getParameter("bekraftat" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "").replace("\u2212","-");
                                         bekraftat = Double.parseDouble(tal); 
                                     }
                                     catch (NullPointerException ne) { bekraftat=null; }
