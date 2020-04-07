@@ -168,6 +168,13 @@ table {
 .o22-indikator {
     width: 120px;
 }
+.o2-odd-row {
+    background-color:  #fafafa ;
+}
+.o2-even-row {
+    
+}
+
 .bold-border {
    border: 2px solid black; 
 }   

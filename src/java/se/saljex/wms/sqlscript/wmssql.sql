@@ -151,6 +151,11 @@ $BODY$
 
 -- View: wmsorder2
 -- DROP VIEW wmsorder2;
+
+
+
+-- View: wmsorder2
+-- DROP VIEW wmsorder2;
 CREATE OR REPLACE VIEW wmsorder2 AS 
  SELECT 'AB-'::text || order2.ordernr AS wmsordernr,
     order2.ordernr AS orgordernr,
@@ -206,9 +211,9 @@ UNION ALL
     artnr as artnr,
     artnamn as namn,
     null as levnr,
-    antal as best,
+    (antal*-1)::REAL as best,
     null as rab,
-    antal as lev,
+    (antal*-1)::REAL as lev,
     null as text,
     null as pris,
     null as summa,
@@ -229,9 +234,9 @@ UNION ALL
     artnr as artnr,
     artnamn as namn,
     null as levnr,
-    best as best, 
+    (best*-1)::REAL as best, 
     null as rab,
-    best as lev,
+    (best*-1)::REAL as lev,
     null as text,
     null as pris,
     null as summa,
@@ -244,9 +249,6 @@ UNION ALL
     stjid as stjid
    FROM sxfakt.best2
    ;
-
-ALTER TABLE wmsorder2
-  OWNER TO sxfakt;
 
 
 

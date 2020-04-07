@@ -18,6 +18,9 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
 
+
+
+
 CREATE OR REPLACE FUNCTION wmsorderlastaav(
     in_anvandare character varying,
     in_wmsordernr character varying,

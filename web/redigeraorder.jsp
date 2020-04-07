@@ -321,9 +321,6 @@
         </table>
   </div>
                     <form id="oform" method="post" enctype="application/x-www-form-urlencoded">
-                <inpuut type="hidden" name="fardigmarkera" id="form-fardigmarkera">
-                <inpuut type="hidden" name="anvandare" id="form-anvandare">
-                <inpuut type="hidden" name="hindrasamfakstatus" id="form-hindrasamfakstatus">
                         <input type="hidden" name="wmsordernr" value="<%= wmsordernr %>">
 
   <div class="orderrader">
@@ -424,7 +421,29 @@
         <DIV id="kollin" style="margin-top: 12px;">
             <% request.setAttribute("wmsordernr", wmsordernr); %>
             <jsp:include page="/WEB-INF/getkollilist.jsp" flush="true" />
-        </DIV>   
-<% } %>        
+        </DIV>
+</div>
+<% } %>  
+
+
+<div class="no-print" style="display: inline-block">
+    <%
+        ResultSet rs = con.createStatement().executeQuery("select wmsordernr, namn from wmsorder1 where lagernr=" + lagernr + " and status='Utskr' order by wmsordernr");
+        while (rs.next()) {
+    %>
+    <div>
+        <a href="?wmsordernr=<%= rs.getString("wmsordernr") %>">
+           <%= rs.getString("wmsordernr")  %>
+            <%= Const.toHtml(rs.getString("namn")) %>
+        </a>
+        
+    </div>
+    
+  <% } %>
+</div>
+
+
+
+
     </body>
 </html>

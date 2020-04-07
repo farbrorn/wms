@@ -279,8 +279,10 @@ function skickaTillPlock() {
                 
             </tr>
             <% int tabindex=0; %>
+            <% boolean odd=false; %>
             <% while (rs.next()) { %>
             <% 
+                odd = !odd;
                 tabindex++;
                 rader = rs.getInt("rader");
                 raderIlager = rs.getInt("raderilager");
@@ -290,8 +292,8 @@ function skickaTillPlock() {
                 
                 
             %>
-                <tr class="link" id="trsnabbrader<%= rs.getString("wmsordernr") %>" onkeydown="orderlistKey(event)" tabindex="<%= tabindex %>" onfocus="visaSnabbrader('<%= rs.getString("wmsordernr") %>')" onclick="visaSnabbrader('<%= rs.getString("wmsordernr") %>')">
-                    <td class="o-ordernr"> <%= rs.getString("wmsordernr") %><br><%= rs.getString("datum") %> </td>
+                <tr class="link <%= odd ? "o2-odd-row" : "o2-even-row"%>" id="trsnabbrader<%= rs.getString("wmsordernr") %>" onkeydown="orderlistKey(event)" tabindex="<%= tabindex %>" onfocus="visaSnabbrader('<%= rs.getString("wmsordernr") %>')" onclick="visaSnabbrader('<%= rs.getString("wmsordernr") %>')">
+                    <td class="o-ordernr"> <b><%= rs.getString("wmsordernr") %></b><br><%= rs.getString("datum") %> </td>
                 <td class="o-datum"><%= rs.getString("status") %></td>
                 <td class="o-namn"><%= Const.toHtml(rs.getString("namn")) %></td>
                 <td><div style="width: 100px; height: 20px; text-align: center; overflow: visible; white-space: nowrap; border: 1px solid grey; position:relative;"><div style="top: 0; left:0; position: absolute; line-height: 20px; width: 100%; height: 100%; text-align: center; z-index: 10;"><%= raderIlager %>/<%= rader %></div><div style="background-color: lightgreen; position: absolute; top: 0; left: 0; height: 100%; width:<%= proc %>%"></div></div><b><%= Const.toStr(rs.getString("levdat")) %></b></td>
