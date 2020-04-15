@@ -39,7 +39,7 @@ if substring(in_wmsordernr,1,2)='AB' then
 	if (this_tillannanfilial or this_isfelpris or this_isejfakturerbar) then this_endastspara=true; end if;
 	if (this_tillannanfilial or this_isejfakturerbar) then this_ejrestorder=true; end if;
 
-	if (this_endastspara) then this_sparstatus = 'W-Klar'; else this_sparstatus = 'Samfak'; end if;
+	if (this_endastspara) then this_sparstatus = 'Plckad'; else this_sparstatus = 'Samfak'; end if;
 
 	update sxfakt.order2 set wmslock=null where ordernr=this_ordernr;
 	update sxfakt.order1 set status=this_sparstatus where ordernr=this_ordernr;
@@ -79,7 +79,7 @@ if substring(in_wmsordernr,1,2)='AB' then
 						netto, enh, levdat, utskrivendatum, utskriventid, stjid
 				from sxfakt.order2 where ordernr=this_ordernr and case when best>=0 then case when lev < best then best-lev else 0 end else case when lev > best then best-lev else 0 end end <> 0;
 		
-		update sxfakt.order2 set summa=round((pris*best*(1-rab/100))::numeric,2) where ordernr=this_nyordernr;
+		update sxfakt.order2 set summa=round((round(pris::numeric,2)*round(best::numeric,2)*(1-rab/100))::numeric,2) where ordernr=this_nyordernr;
 		
 		insert into sxfakt.orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
 			values (this_nyordernr, current_date, clock_timestamp()::time, in_anvandare, 'Skapad', 0, 0, 0); 
@@ -89,7 +89,8 @@ if substring(in_wmsordernr,1,2)='AB' then
 			where lager.lagernr=s.lagernr and lager.artnr=s.artnr; 
 	end if;
 	
-	update sxfakt.order2 set best=lev where ordernr=this_ordernr;
+	update sxfakt.order2 set best=lev, summa=round((pris*(1-rab/100)*lev)::numeric,2) where ordernr=this_ordernr
+            and pos in (select pos from wmsorderplock wp where wp.wmsordernr=in_wmsordernr);
 	update sxfakt.lager set iorder = iorder + s.best 
 		from (select o1.lagernr, o2.artnr, o2.best from sxfakt.order1 o1 join sxfakt.order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_ordernr and o2.artnr not like '*%') s
 		where lager.lagernr=s.lagernr and lager.artnr=s.artnr; 
@@ -104,7 +105,7 @@ elsif substring(in_wmsordernr,1,2)='AS' then
 	if (this_tillannanfilial or this_isfelpris or this_isejfakturerbar) then this_endastspara=true; end if;
 	if (this_tillannanfilial or this_isejfakturerbar) then this_ejrestorder=true; end if;
 
-	if (this_endastspara) then this_sparstatus = 'W-Klar'; else this_sparstatus = 'Samfak'; end if;
+	if (this_endastspara) then this_sparstatus = 'Plckad'; else this_sparstatus = 'Samfak'; end if;
 
 	update sxasfakt.order2 set wmslock=null where ordernr=this_ordernr;
 	update sxasfakt.order1 set status=this_sparstatus where ordernr=this_ordernr;
@@ -144,7 +145,7 @@ elsif substring(in_wmsordernr,1,2)='AS' then
 						netto, enh, levdat, utskrivendatum, utskriventid, stjid
 				from sxasfakt.order2 where ordernr=this_ordernr and case when best>=0 then case when lev < best then best-lev else 0 end else case when lev > best then best-lev else 0 end end <> 0;
 		
-		update sxasfakt.order2 set summa=round((pris*best*(1-rab/100))::numeric,2) where ordernr=this_nyordernr;
+		update sxasfakt.order2 set summa=round((round(pris::numeric,2)*round(best::numeric,2)*(1-rab/100))::numeric,2) where ordernr=this_nyordernr;
 		
 		insert into sxasfakt.orderhand (ordernr, datum, tid, anvandare, handelse, nyordernr, antalkolli, totalvikt) 
 			values (this_nyordernr, current_date, clock_timestamp()::time, in_anvandare, 'Skapad', 0, 0, 0); 
@@ -154,7 +155,8 @@ elsif substring(in_wmsordernr,1,2)='AS' then
 			where lager.lagernr=s.lagernr and lager.artnr=s.artnr; 
 	end if;
 	
-	update sxasfakt.order2 set best=lev where ordernr=this_ordernr;
+	update sxasfakt.order2 set best=lev, summa=round((pris*(1-rab/100)*lev)::numeric,2) where ordernr=this_ordernr
+            and pos in (select pos from wmsorderplock wp where wp.wmsordernr=in_wmsordernr);
 	update sxasfakt.lager set iorder = iorder + s.best 
 		from (select o1.lagernr, o2.artnr, o2.best from sxasfakt.order1 o1 join sxasfakt.order2 o2 on o1.ordernr=o2.ordernr where o1.ordernr=this_ordernr and o2.artnr not like '*%') s
 		where lager.lagernr=s.lagernr and lager.artnr=s.artnr; 

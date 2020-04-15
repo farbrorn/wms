@@ -224,7 +224,7 @@ UNION ALL
     null as utskrivendatum,
     null as utskriventid,
     stjid as stjid
-   FROM sxfakt.INLEV2
+   FROM sxfakt.INLEV2 where id > (select min(id) from inlev1 where datum > current_date-260)
 UNION ALL
  SELECT 'BE-'::text || bestnr AS wmsordernr,
     bestnr AS orgordernr,
@@ -277,6 +277,7 @@ UNION ALL
 
 CREATE OR REPLACE VIEW wmsorder1 AS 
  SELECT 'AB-'::text || order1.ordernr AS wmsordernr,
+    'sxfakt'::text AS wmsdbschema,
     order1.ordernr AS orgordernr,
     order1.dellev,
     order1.namn,
@@ -327,6 +328,7 @@ CREATE OR REPLACE VIEW wmsorder1 AS
    FROM order1
 UNION ALL
  SELECT 'AS-'::text || order1.ordernr AS wmsordernr,
+    'sxasfakt'::text AS wmsdbschema,
     order1.ordernr AS orgordernr,
     order1.dellev,
     order1.namn,
@@ -377,6 +379,7 @@ UNION ALL
    FROM sxasfakt.order1
 UNION ALL
  SELECT 'IN-'::text || i1.id AS wmsordernr,
+    'sxfakt'::text AS wmsdbschema,
     i1.id AS orgordernr,
     NULL::smallint AS dellev,
     i1.levnamn AS namn,
@@ -392,7 +395,7 @@ UNION ALL
     i1.marke,
     i1.datum,
     NULL::smallint AS moms,
-    'Sparad'  AS status,
+    i1.status,
     NULL::smallint AS ktid,
     NULL::smallint AS bonus,
     NULL::smallint AS faktor,
@@ -400,7 +403,7 @@ UNION ALL
     NULL::character varying AS levvillkor,
     NULL::smallint AS mottagarfrakt,
     NULL::character varying AS fraktkundnr,
-    NULL::character varying AS fraktbolag,
+    'Z-Inleveranser'::character varying AS fraktbolag,
     NULL::real AS fraktfrigrans,
     i1.lagernr,
     NULL::integer AS direktlevnr,
@@ -424,9 +427,10 @@ UNION ALL
     NULL::smallint AS forskatt,
     NULL::smallint AS forskattbetald,
     NULL::character varying AS betalsatt
-   FROM inlev1 i1
+   FROM inlev1 i1 where datum > current_date-30
 UNION ALL
  SELECT 'BE-'::text || b1.bestnr AS wmsordernr,
+    'sxfakt'::text AS wmsdbschema,
     b1.bestnr AS orgordernr,
     NULL::smallint AS dellev,
     b1.levnamn AS namn,
@@ -442,7 +446,7 @@ UNION ALL
     b1.marke,
     b1.datum,
     NULL::smallint AS moms,
-    'Sparad' AS status,
+    'Sparad'::character varying AS status,
     NULL::smallint AS ktid,
     NULL::smallint AS bonus,
     NULL::smallint AS faktor,
@@ -450,7 +454,7 @@ UNION ALL
     NULL::character varying AS levvillkor,
     NULL::smallint AS mottagarfrakt,
     NULL::character varying AS fraktkundnr,
-    NULL::character varying AS fraktbolag,
+    'Z-Beställningar'::character varying AS fraktbolag,
     NULL::real AS fraktfrigrans,
     b1.lagernr,
     NULL::integer AS direktlevnr,
@@ -475,10 +479,6 @@ UNION ALL
     NULL::smallint AS forskattbetald,
     NULL::character varying AS betalsatt
    FROM best1 b1;
-
-ALTER TABLE wmsorder1
-  OWNER TO sxfakt;
-
 
 
 

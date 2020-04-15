@@ -162,24 +162,30 @@ ps.setString(1, ordernr);
   </div>
 <% } %>        
   <%
-   ps = con.prepareStatement("SELECT KOLLITYP, LANGDCM, BREDDCM, HOJDCM, VIKTKG FROM WMSKOLLIN WHERE WMSORDERNR=? ORDER BY KOLLIID");
+   ps = con.prepareStatement("SELECT count(*) as antal, KOLLITYP, LANGDCM, BREDDCM, HOJDCM, VIKTKG FROM WMSKOLLIN WHERE WMSORDERNR=? group by KOLLITYP, LANGDCM, BREDDCM, HOJDCM, VIKTKG order by KOLLITYP, LANGDCM, BREDDCM, HOJDCM, VIKTKG");
     ps.setString(1, ordernr);
    ResultSet k=ps.executeQuery();
+   int antalKollin = 0;
 %>
 <div style="margin-top: 12px; padding: 12px 24px 12px 24px;">
 Kollin
 <table>
-    <tr><td>Typ</td><td>Längd (cm)</td><td>Bredd (cm)</td><td>Höjd (cm)</td><td>Vikt (kg)</td></tr>
+    <tr><td>Antal</td><td>Typ</td><td>Dim</td><td>Vikt</td></tr>
 <% while (k.next()) { %> 
+<% antalKollin += k.getInt("antal"); %>
 <tr>
+    <td><%= k.getInt("antal") %></td>
     <td><%= Const.toHtml(k.getString("kollityp")) %></td>
-    <td><%= k.getInt("langdcm") %></td>
-    <td><%= k.getInt("breddcm") %></td>
-    <td><%= k.getInt("hojdcm") %></td>
-    <td><%= k.getInt("viktkg") %></td>
+    <td><% if (k.getInt("langdcm") != 0 || k.getInt("breddcm") != 0|| k.getInt("hojdcm")!= 0) { %>
+        <%= k.getInt("langdcm") %>x<%= k.getInt("breddcm") %>x<%= k.getInt("hojdcm") %> cm
+    <% } %></td>
+    <td><% if (k.getInt("viktkg") != 0) { %><%= k.getInt("viktkg") %> kg/st<% } %></td>
 </tr>
 <% } %>
 </table>
+<% if (antalKollin>0) { %>
+<b>Totalt antal kolli: <%= antalKollin %></b>
+<% } %>
 </div>    
 </div>
 <% } %>

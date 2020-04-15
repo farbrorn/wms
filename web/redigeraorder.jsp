@@ -88,16 +88,18 @@
     function avbrytOrder() {
         if (!confirm("Vill du avbryta plock av denna order, och markera ordern som Sparad?")) return; 
         var anv = prompt("Bekräfta användare");
-        var XHR= new XMLHttpRequest();
-        XHR.addEventListener( "load", function(event) {
-            try {
-                var r = JSON.parse(event.target.responseText);
-                if (r["response"]=="OK") location.reload(); else alert(r["errorMessage"]);
-             } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
-        } );
-        XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
-        XHR.open( "POST", "ac?ac=avbrytwmsorder&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) );
-        XHR.send();
+        if (anv!=null && anv.length > 0) {
+            var XHR= new XMLHttpRequest();
+            XHR.addEventListener( "load", function(event) {
+                try {
+                    var r = JSON.parse(event.target.responseText);
+                    if (r["response"]=="OK") location.reload(); else alert(r["errorMessage"]);
+                 } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
+            } );
+            XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
+            XHR.open( "POST", "ac?ac=avbrytwmsorder&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) );
+            XHR.send();
+        }
     }    
 
     function skrivutOrder() {
@@ -111,44 +113,46 @@
 
     function doSparaOrder(fardigmarkera) {
         var anv = prompt("Bekräfta användare");
-       var rowcn = 0;
-       var inp;
-       var err="";
-       while (rowcn < 100000) {
-           rowcn++;
-           inp = document.getElementById("i_bekraftat" + rowcn);
-           if (inp == null) break;
-           var v = inp.value.replace(",",".").trim();
-           if (isNaN(v) || v == null) err=err+"Rad " + rowcn + " ogiltigt antal.   ";
-       }
-       if (err.length > 0) 
-           alert("Kan inte spara. Följande fel behöver åtgärdas: " + err); 
-       else {
-            var form=document.getElementById("oform");
-            var FD = new FormData(form);
-            var XHR= new XMLHttpRequest();
-            XHR.addEventListener( "load", function(event) {
-                try {
-                        var r = JSON.parse(event.target.responseText);
-                        if (r["response"]=="OK") {
-                            document.getElementById("message").innerHTML = '<p style="font-weight: bold; color: green;">Sparad OK!</p>'; 
-                            document.getElementById("hamtaordernr").value='';
-                            document.getElementById("hamtaordernr").focus();
-                        } else {
-                            document.getElementById("message").innerHTML = '<p style="font-weight: bold; color: red;">' + r["errorMessage"] + '</p>'; 
-                        }
-                } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
-            } );
-            
-            XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
-            XHR.open( "POST", "ac?ac=saveredigeradorder" );
-//            XHR.setRequestHeader("Content-Type","multipart/formdata; charset=utf-8");
-            if (fardigmarkera) {
-                FD.append("fardigmarkera","true");
-                FD.append("anvandare",anv);
-                FD.append("hindrasamfakstatus","false");                
+        if (anv!=null && anv.length > 0) {
+            var rowcn = 0;
+            var inp;
+            var err="";
+            while (rowcn < 100000) {
+                rowcn++;
+                inp = document.getElementById("i_bekraftat" + rowcn);
+                if (inp == null) break;
+                var v = inp.value.replace(",",".").trim();
+                if (isNaN(v) || v == null) err=err+"Rad " + rowcn + " ogiltigt antal.   ";
+            }
+            if (err.length > 0) 
+                alert("Kan inte spara. Följande fel behöver åtgärdas: " + err); 
+            else {
+                 var form=document.getElementById("oform");
+                 var FD = new FormData(form);
+                 var XHR= new XMLHttpRequest();
+                 XHR.addEventListener( "load", function(event) {
+                     try {
+                             var r = JSON.parse(event.target.responseText);
+                             if (r["response"]=="OK") {
+                                 document.getElementById("message").innerHTML = '<p style="font-weight: bold; color: green;">Sparad OK!</p>'; 
+                                 document.getElementById("hamtaordernr").value='';
+                                 document.getElementById("hamtaordernr").focus();
+                             } else {
+                                 document.getElementById("message").innerHTML = '<p style="font-weight: bold; color: red;">' + r["errorMessage"] + '</p>'; 
+                             }
+                     } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
+                 } );
+
+                 XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
+                 XHR.open( "POST", "ac?ac=saveredigeradorder" );
+     //            XHR.setRequestHeader("Content-Type","multipart/formdata; charset=utf-8");
+                 if (fardigmarkera) {
+                     FD.append("fardigmarkera","true");
+                     FD.append("anvandare",anv);
+                     FD.append("hindrasamfakstatus","false");                
+                  }
+                 XHR.send(FD);
              }
-            XHR.send(FD);
        }
     }
     
@@ -184,12 +188,67 @@
            document.getElementById("nyorderform").submit();
         }
     }
+    function radUpp(currentRow) {
+        if (currentRow > 1) {
+            var nextInput = document.getElementById("i_bekraftat" + (currentRow-1));
+            nextInput.focus();
+            nextInput.select();
+        }
+    }
+    function radNer(currentRow) {
+        var nextInput = document.getElementById("i_bekraftat" + (currentRow+1));
+        if (nextInput!=null) {
+            nextInput.select();
+            nextInput.focus();
+        }
+    }
+    function bekraftatKeyHandler(event,currentRow) {
+        var k = event.keyCode;
+        if (k===13) { //enter
+            event.preventDefault();
+            radNer(currentRow);
+        } else if (k==38) { //Upp
+            event.preventDefault();
+            radUpp(currentRow);
+        } else if (k===40) { //Down
+            event.preventDefault();
+            radNer(currentRow);
+        } else if (k==113) { //f2
+            event.preventDefault();
+            setFullevRad(currentRow);
+            radNer(currentRow);
+        } else if (k==121) { //f10
+            event.preventDefault();
+            sparaOrder();
+        }
+    }
+    function kolliKeyHandler(event,prev,next) {
+        var k = event.keyCode;
+        if (k===13 || k===40) { //enter, down
+            event.preventDefault();
+            if (next!=null) document.getElementById(next).focus(); 
+        } else if (k===38) { //up
+            event.preventDefault();
+            if (prev!=null) document.getElementById(prev).focus(); 
+        } else if (k==121) { //f10
+            event.preventDefault();
+            addKolli();
+        }
+    }
+    
+    function documentKeyHandler(event) {
+        var k = event.keyCode;
+        if (k==114) { //f3
+            event.preventDefault();
+            skrivutOrder();
+        }        
+    }
 </script>
             
         
         
     </head>
-    <body>
+    <body onkeydown="documentKeyHandler(event)">
         <div class="no-print" id="message"></div>
         <div class="no-print" id="nyordernr" style="margin: 8px 0px 8px 0px; border: 1pk solid black; padding: 8px;">
             <form id="nyorderform">
@@ -197,7 +256,7 @@
                 <button onclick="hamtaOrder()">Hämta</button>
             </form> 
         </div>
-        
+        <div>Pil upp/ner, Enter - Byt inmatningsfält.  F2 - Kopiera antal. F3 - Skriv ut. F10 - Spara.</div>
 <%
     ps = con.prepareStatement("select o1.*, k.tel as k_tel, k.biltel as k_biltel from " + 
            " wmsorder1 o1 left outer join kund k on k.nummer=o1.kundnr where o1.wmsordernr=?");
@@ -238,7 +297,7 @@
         ResultSet ppgRs  = ppgPs.executeQuery();
         while(ppgRs.next()) {
             String s = lagerplatser.get(ppgRs.getInt("hostidentification"));
-            if (s==null ) s=""; else s="<br>";
+            if (s==null ) s=""; else s=s+"<br>";
             s=s+Const.toHtml(ppgRs.getString("quantity") + " / " + ppgRs.getString("locationname"));
             lagerplatser.put(ppgRs.getInt("hostidentification"), s);
         }
@@ -325,7 +384,7 @@
 
   <div class="orderrader">
       <table>
-          <tr class="tdrubrikrad"><td>Lagerplats</td><td>Artikelnr</td><td>Benämning</td><td>Antal</td><td></td><td>Enh</td><td>I lager</td><td>Allokerat</td><td>Plockat</td><td>Bekräftat</td><td>Full</td></tr>
+          <tr class="tdrubrikrad"><td>Lagerplats</td><td>Artikelnr</td><td>Benämning</td><td>Antal</td><td></td><td>Enh</td><td>I lager</td><td>Allokerat</td><td>Bekräftat</td><td>Full</td></tr>
         <% StringBuilder sb = new StringBuilder(); %>
         <% boolean odd=false; %>
         <% int rowcn = 0; %>
@@ -346,14 +405,13 @@
                 </td>
                 <td class=""><%= Const.toHtml(o2.getString("artnr")) %></td>
                 <td class=""><%= Const.toHtml(o2.getString("namn")) %></td>
-                <td id="bestantal<%= rowcn %>" class="" style="font-weight: bold"><%= Const.getFormatNumber(o2.getDouble("best")) %></td>
+                <td id="bestantal<%= rowcn %>" class="" style="font-weight: bold"><%= Const.getFormatNumber0To2Dec(o2.getDouble("best")) %></td>
                 <td class=""><%= Const.noNull(o2.getDouble("ilager")).compareTo(0.0)>0 ? "*" : "" %></td>
                 <td class=""><%= Const.toHtml(o2.getString("enh")) %></td>
                 <td><%= Const.getFormatNumber0To2Dec(o2.getDouble("ilager")) %></td>
                 <td class=""></td>
                 <% Double quantityConfirmed = o2.getDouble("quantityconfirmed"); %>
                 <% if (o2.wasNull()) quantityConfirmed=null; %>
-                <td><%= quantityConfirmed!=null ? Const.getFormatNumber0To2Dec(quantityConfirmed) : "" %></td>
                 <%
                     Double bekraftat;
                     bekraftat = o2.getDouble("op_bekraftat");
@@ -361,7 +419,7 @@
                     if (bekraftat==null && quantityConfirmed!=null) bekraftat=quantityConfirmed;
                 %>
                 
-                <td><input style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber0To2Dec(bekraftat) %>" ></td>
+                <td><input onkeydown="bekraftatKeyHandler(event,<%= rowcn  %>)" <%=  rowcn==1 ? "autofocus" : "" %> style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber0To2Dec(bekraftat) %>" ></td>
                 <td>
                     <input class="no-print" type="button" value="&#10004;" onclick="setFullevRad(<%= rowcn %>)">
                     <input type="hidden" name="pos<%= rowcn %>" value="<%= o2.getInt("pos") %>">
@@ -397,22 +455,24 @@
         <table>
             <tr><td>Kollityp</td><td>Antal</td><td>Vikt per kolli (kg)</td><td>Längd (cm)</td><td>Bredd (cm)</td><td>Djup (cm)</td><td></td></tr>
             <tr>
-                <td><input type="text" id="kollityp" value="Kolli" list="kollityper" size="15"></td>
-                <datalist id="kollityper">
-                    <option value="Paket">
-                    <option value="Ring">
-                    <option value="Rör">
-                    <option value="Häck">
-                    <option value="Bunt">
-                    <option value="Kolli">
-                </datalist>
+                <td><input onkeydown="kolliKeyHandler(event,null, 'antal')" type="text" id="kollityp" value="Kolli" size="15">
+                    <select style="width: 20px;" onchange="document.getElementById('kollityp').value=this.options[this.selectedIndex].text;">
+                        <option value="Paket">Paket</option>
+                        <option value="Pall">Pall</option>
+                        <option value="Ring">Ring</option>
+                        <option value="Rör">Rör</option>
+                        <option value="Häck">Häck</option>
+                        <option value="Bunt">Bunt</option>
+                        <option value="Kolli">Kolli</option>
+                    </select>
+                </td>
 
-                <td><input type="text" id="antal" value="1" size="3"></td>
-                <td><input type="text" id="viktkg" size="6"></td>
-                <td><input type="text" id="langdcm" size="6"></td>
-                <td><input type="text" id="breddcm" size="6"></td>
-                <td><input type="text" id="hojdcm" size="6"></td>
-                <td><input type="button" onclick="addKolli()" value="Lägg till kolli"</td>
+                <td><input type="text" id="antal" value="1" size="3" onkeydown="kolliKeyHandler(event,'kollityp', 'viktkg')"></td>
+                <td><input type="text" id="viktkg" size="6" onkeydown="kolliKeyHandler(event,'antal','langdcm')"></td>
+                <td><input type="text" id="langdcm" size="6" onkeydown="kolliKeyHandler(event,'viktkg','breddcm')"></td>
+                <td><input type="text" id="breddcm" size="6" onkeydown="kolliKeyHandler(event,'langdcm', 'hojdcm')"></td>
+                <td><input type="text" id="hojdcm" size="6" onkeydown="kolliKeyHandler(event,'breddcm','addkolli')"></td>
+                <td><input type="button" id="addkolli" onclick="addKolli()" value="Lägg till kolli" ></td>
             </tr>
         </table>
         

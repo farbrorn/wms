@@ -20,6 +20,7 @@
     boolean visaUtskrivna="true".equals(request.getParameter("visautskrivna"));
     boolean visaSamfakt="true".equals(request.getParameter("visasamfakt"));
     boolean visaAvvaktande="true".equals(request.getParameter("visaavvaktande"));
+    boolean visaPlockade="true".equals(request.getParameter("visaplockade"));
     
 %>
 <%
@@ -155,10 +156,16 @@ function skickaTillPlock() {
                         <span style="width: 100%; height: 100%; position: absolute; top: 0; left:0; z-index: 10;" id="uppdatera" >Uppdatera</span>
                         <div id="updatebar" style="display: block; height: 100%; position: absolute; top: 0; left:0; width:0%;  background-color: lightgreen;"></div>
                     </div>
-                        </button>
-                Visa Utskrivna:<input onclick="sendForm()" type="checkbox" name="visautskrivna" value="true" <%= visaUtskrivna ? "checked" : "" %>>
-                Samfakt:<input onclick="sendForm()" type="checkbox" name="visasamfakt" value="true" <%= visaSamfakt ? "checked" : "" %>>
-                Avvaktande:<input onclick="sendForm()" type="checkbox" name="visaavvaktande" value="true" <%= visaAvvaktande ? "checked" : "" %>>
+                    </button>
+                Visa 
+                <input style="margin-left: 14px;" onclick="sendForm()" type="checkbox" name="visautskrivna" value="true" <%= visaUtskrivna ? "checked" : "" %>>
+                Utskrivna
+                <input style="margin-left: 14px;" onclick="sendForm()" type="checkbox" name="visasamfakt" value="true" <%= visaSamfakt ? "checked" : "" %>>
+                Samfakt
+                <input style="margin-left: 14px;" onclick="sendForm()" type="checkbox" name="visaavvaktande" value="true" <%= visaAvvaktande ? "checked" : "" %>>
+                Avvaktande
+                <input style="margin-left: 14px;" onclick="sendForm()" type="checkbox" name="visaaplockade" value="true" <%= visaAvvaktande ? "checked" : "" %>>
+                Plockade
                 <input type="hidden" name="ordergrupp" value="<%= request.getParameter("ordergrupp") %>">
                 </form>
             </div>
@@ -172,6 +179,7 @@ function skickaTillPlock() {
             int antalStatusar=1;
             if (visaAvvaktande) antalStatusar++;
             if(visaUtskrivna) antalStatusar++;
+            if(visaPlockade) antalStatusar++;
             if(visaSamfakt) antalStatusar= antalStatusar+2;
             String statusarInString = "?";
             for (int i=1; i<antalStatusar; i++) statusarInString = statusarInString + ",?";
@@ -204,6 +212,10 @@ function skickaTillPlock() {
    }    
    if (visaAvvaktande) { 
         ps.setString(pos, "Avvakt");
+        pos++;
+   }    
+   if (visaPlockade) { 
+        ps.setString(pos, "Plckad");
         pos++;
    }    
    rs = ps.executeQuery();

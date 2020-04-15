@@ -5,6 +5,7 @@
  */
 package se.saljex.wms;
 
+import java.awt.print.PrinterException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,6 +13,9 @@ import java.util.Date;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
+import static se.saljex.wms.PrintUtil.printPdf;
+import se.saljex.wms.print.OrderPdf;
+import se.saljex.wms.print.OrderPlockatillPdf;
 
 /**
  *
@@ -33,7 +37,10 @@ public class OverforHotOrder implements Runnable{
                 while(rs.next()) {
                     rowCn++;
                     Const.log("Rad: " + rowCn + " HOT PICK order: " + rs.getString(1));
-                    Const.log("______");
+                    try { 
+                        printPdf(OrderPlockatillPdf.getPdf(conSx, rs.getString(1)),"ORDER", "Order", 1); 
+                    } catch(PrinterException e) { Const.log("Kan inte skriva ut"); e.printStackTrace(); }
+                    
                 }
             } catch (Exception e) {
                 Const.log("Fel vid anrop från Timer overforHotOrder: " + e.getMessage());

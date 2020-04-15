@@ -5,6 +5,8 @@
  */
 package se.saljex.wms;
 
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -14,12 +16,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.Enumeration;
+import javax.print.Doc;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.SimpleDoc;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import static se.saljex.wms.PrintUtil.printPdf;
+import se.saljex.wms.print.OrderPdf;
+import se.saljex.wms.print.OrderPlockatillPdf;
 
 /**
  *
@@ -53,12 +64,13 @@ public class ActionServlet extends HttpServlet {
             response.setHeader("Pragma", "no-cache");
             response.setDateHeader("Expires", 0);
             if ("test".equals(ac)) {
-                response.setContentType("application/json;charset=UTF-8");
-                jb.addResponseOK();
-                jb.addMessage("Hej på dig!");
-                jb.addField("test", "Testvärde");
-                out.print(jb.getJsonString());
-
+                response.setContentType("text/html;charset=UTF-8");      
+                try {
+                    out.print("start");
+                    PrintUtil.pr(Const.getConnection(request), request.getParameter("wmsordernr"));
+                    out.print("slut");
+                } catch (PrinterException e) { out.print("fel" + e.getMessage());e.printStackTrace(); } 
+                catch (Exception e) { out.print(e.getMessage()); e.printStackTrace(); }
             } else if ("avbrytwmsorder".equals(ac)) {
                 response.setContentType("application/json;charset=UTF-8");
                 try {
@@ -259,6 +271,7 @@ public class ActionServlet extends HttpServlet {
 
                     con.commit();
                     jb.addResponseOK();
+                    try { printPdf(OrderPlockatillPdf.getPdf(con, wmsOrdernr),"ORDER", "Order", 1); }catch(PrinterException e) { Const.log("Kan inte skriva ut"); e.printStackTrace(); }
                 }
                 catch (SQLException e) {
                     jb.addResponseError("SQLException: " + e.toString());
