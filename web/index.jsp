@@ -123,25 +123,27 @@
 function skickaTillPlock() {
      
     var anv = prompt("Bekräfta användare");
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-        try {
-      var r = JSON.parse(this.responseText);
-      
-    if (r["response"]=="OK") {
-        window.open("<%= request.getContextPath() %>/printorder.jsp?wmsordernr="+visadOrder);
-    } else {
-        alert(r["errorMessage"]);
+    if (anv!=null && anv.length > 0) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+              try {
+            var r = JSON.parse(this.responseText);
+
+          if (r["response"]=="OK") {
+              window.open("<%= request.getContextPath() %>/printorder.jsp?wmsordernr="+visadOrder);
+          } else {
+              alert(r["errorMessage"]);
+          }
+
+                  } catch (ex) {
+                      alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText);
+                  }
+          }
+        };
+        xhttp.open("GET", "/wms/ac?ac=markorderwms&wmsordernr=" + visadOrder + "&anvandare=" + encodeURIComponent(anv), true);
+        xhttp.send();
     }
-    
-            } catch (ex) {
-                alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText);
-            }
-    }
-  };
-  xhttp.open("GET", "/wms/ac?ac=markorderwms&wmsordernr=" + visadOrder + "&anvandare=" + encodeURIComponent(anv), true);
-  xhttp.send();
 }
             </script>
     </head>

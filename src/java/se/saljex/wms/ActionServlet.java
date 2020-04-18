@@ -286,6 +286,34 @@ public class ActionServlet extends HttpServlet {
                     out.print(jb.getJsonString());
                 }
  
+                
+            } else if ("markinlevwms".equals(ac)) {
+                response.setContentType("application/json;charset=UTF-8");
+                try {
+                    con.setAutoCommit(false);
+                    if (!Const.doesUserExists(con, anvandare)) throw new ErrorException("Användare är ogiltigt.");
+                    ps = con.prepareStatement("select ppgexportinlev(?,?)");
+                    ps.setString(1, wmsOrdernr);
+                    ps.setString(2, anvandare);
+                    ps.executeQuery();
+                    con.commit();
+                    jb.addResponseOK();
+                }
+                catch (SQLException e) {
+                    jb.addResponseError("SQLException: " + e.toString());
+                    try { con.rollback(); } catch (SQLException ee) {}
+                    Const.log(e.toString());
+                }
+                catch(ErrorException e) {
+                    jb.addResponseError(e.getMessage());
+                    try { con.rollback(); } catch (SQLException ee) {}
+                }
+                finally {
+                    out.print(jb.getJsonString());
+                }
+ 
+                
+                
             } else if ("getkollilist".equals(ac)) {
                 response.setContentType("text/html;charset=UTF-8");        
                 request.setAttribute("wmsordernr", wmsOrdernr);

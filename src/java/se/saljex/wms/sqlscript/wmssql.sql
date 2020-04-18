@@ -111,8 +111,8 @@ perform wmsordernr from wmsorder1 where lastdatum is null and status='Sparad' an
 if not found then raise exception 'Order % hittades inte eller var låst av annan användare eller har inte status sparad.', $1; end if;
 
 perform wmssetwmsorderlock(pl_wmsordernr, true, 'Utskr','WMS', pl_anvandare);
-insert into ppgorderexport (ordernr, kund, levadr12, levadr3, marke, transportor, artnr, artnamn, plockinstruktion , best, forpackinfo, refnr, pos, status, priority, deadline)
 
+insert into ppgorderexport (ordernr, kund, levadr12, levadr3, marke, transportor, artnr, artnamn, plockinstruktion , best, forpackinfo, refnr, pos, status, priority, deadline)
 select
 o1.wmsordernr || case when o2.best < 0 then '-R' else '' end
 , o1.namn, o1.levadr1 || ' ' || o1.levadr2, o1.levadr3, 'Godsmärke:' || o1.marke, o1.fraktbolag || ' ' || o1.linjenr1 || ' ' || o1.linjenr2 || ' ' || o1.linjenr3,  
@@ -127,11 +127,72 @@ sxfakt.artikel a on a.nummer=o2.artnr
 where o2.artnr <> '' and o2.artnr is not null and o2.wmsordernr=$1 and o2.best <> 0 
 and (o2.artnr in (SELECT artnr FROM PPGARTIKELEXPORT) or o2.artnr in (SELECT MATERIALNAME FROM PPGLAGERIMPORT))
 order by o2.wmsordernr, o2.pos;
+
+if (substring(pl_wmsordernr,1,2)) = 'AS' then
+    update sxasfakt.order1 set fraktbolag = 'Hämt' where fraktbolag='HOT PICK' and ordernr=wmsordernr2int(pl_wmsordernr);
+elsif (substring(pl_wmsordernr,1,2)) = 'AB' then
+    update sxfakt.order1 set fraktbolag = 'Hämt' where fraktbolag='HOT PICK' and ordernr=wmsordernr2int(pl_wmsordernr);
+end if;
+
+
 return $1;
 end
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE FUNCTION ppgexportinlev(pl_wmsordernr varchar, pl_anvandare varchar default '00')
+  RETURNS varchar AS
+$BODY$
+declare
+pl_id integer;
+begin
+select into pl_id (wmsordernr2int(pl_wmsordernr));
+perform id from inlev1 where id=pl_id;
+if not found then raise exception 'Inleverans id % hittades inte.', pl_id; end if;
+
+insert into ppgorderexport (ordernr, kund, levadr12, levadr3, marke, transportor, artnr, artnamn, plockinstruktion , best, forpackinfo, refnr, pos, status, priority, deadline)
+select
+'IN-' || i1.id , l.namn, '', '', 'Godsmärke:' || i1.marke, '',  
+replace(i2.artnr,'*','#'), i2.artnamn, a.plockinstruktion, i2.antal, 
+ i2.enh || ' Förp: ' || case when a.forpack <= 0 then 1 else a.forpack end || '/' || kop_pack || ' Odelbart: ' || case when a.minsaljpack <=0 then 1 else a.minsaljpack end, 
+ a.bestnr || ' ' || rsk || ' ' || enummer || ' ' || refnr , i2.rad,
+ 0, 2, current_date
+from inlev1 i1 join inlev2 i2 on i1.id=i2.id left outer join 
+artikel a on a.nummer=i2.artnr 
+left outer join lev l on l.nummer=i1.levnr
+where i2.artnr <> '' and i2.artnr is not null and i2.id=pl_id and i2.antal > 0 
+and (i2.artnr in (SELECT artnr FROM PPGARTIKELEXPORT) or i2.artnr in (SELECT MATERIALNAME FROM PPGLAGERIMPORT))
+order by i2.ID, i2.rad;
+
+update inlev1 set status='WMS' where id = pl_id;
+
+
+return $1;
+end
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+
+
+
+
+
 
 
 
@@ -555,7 +616,7 @@ declare
 begin
 delete from ppglager;
 for this_cn in 1..array_upper(in_artnr,1) loop
-	insert into ppgartiklar (artnr, ilager) values (in_artnr[this_cn], in_ilager[this_cn]);
+	insert into ppglager (artnr, ilager) values (in_artnr[this_cn], in_ilager[this_cn]);
 end loop; 
 end;
 $BODY$

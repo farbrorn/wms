@@ -175,6 +175,14 @@ table {
     
 }
 
+
+.odd {
+    background-color: lightblue;
+}
+.even {
+    background-color: lightgrey;
+}
+
 .bold-border {
    border: 2px solid black; 
 }   
