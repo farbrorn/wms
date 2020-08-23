@@ -12,7 +12,7 @@
         <title>PPG Info</title>
         <style>
             body {
-                font-size: 40px;
+                font-size: 30px;
             }
         </style>
         <script>
@@ -32,7 +32,8 @@ function(event) {
   document.getElementById("inlagrade10dagar").innerHTML = o.inlagrade10dagar;
   document.getElementById("plockade100dagar").innerHTML = o.plockade100dagar;
   document.getElementById("inlagrade100dagar").innerHTML = o.inlagrade100dagar;
-  if (o.hotpickorderrader>0 && flashVar==null) startFlash(); else if (o.hotpickorderrader===0 && flashVar != null) stopFlash();
+  document.getElementById("i").innerHTML = o.i;
+  if (o.hotpickorderraderdagens>0 && flashVar==null) startFlash(); else if (o.hotpickorderraderdagens===0 && flashVar != null) stopFlash();
 }, false);            
 
     var flashVar = null;
@@ -60,17 +61,20 @@ function flash() {
         
     </head>
     <body>
-        Ordrar:<span id="ordrar"></span>
-        <br>ordrarhotpick:<span id="ordrarhotpick"></span>
-        <br>ordrarhotpickdagens:<span id="ordrarhotpickdagens"></span>
-        <br>orderrader:<span id="orderrader"></span>
-        <br>hotpickorderrader:<span id="hotpickorderrader"></span>
-        <br>hotpickorderraderdagens:<span id="hotpickorderraderdagens"></span>
-        <br>plockadedagens:<span id="plockadedagens"></span>
-        <br>inlagradedagens:<span id="inlagradedagens"></span>
-        <br>plockade10dagar:<span id="plockade10dagar"></span>
-        <br>inlagrade10dagar:<span id="inlagrade10dagar"></span>
-        <br>plockade100dagar:<span id="plockade100dagar"></span>
-        <br>inlagrade100dagar:<span id="inlagrade100dagar"></span>
+        Ordrar att plocka:<span id="ordrar"></span>
+        <br>...varav hotpick:<span id="ordrarhotpick"></span>
+        <br>...varav hotpick idag:<span id="ordrarhotpickdagens"></span>
+        <br>Orderrader att plocka:<span id="orderrader"></span>
+        <br>...varav hotpick:<span id="hotpickorderrader"></span>
+        <br>...varav hotpick idag:<span id="hotpickorderraderdagens"></span>
+        <br>
+        <br>Plockade orderrader:<span id="plockadedagens"></span>
+        <br>Plockade orderrader 10 dagar:<span id="plockade10dagar"></span>
+        <br>Plockade orderrader 100 dagar:<span id="plockade100dagar"></span>
+        <br>
+        <br>Inlagrade orderrader:<span id="inlagradedagens"></span>
+        <br>Inlagrade orderrader 10 dagar:<span id="inlagrade10dagar"></span>
+        <br>Inlagrade orderrader 100 dagar:<span id="inlagrade100dagar"></span>
+        <br>i:<span id="i"></span>
                        </body>
 </html>

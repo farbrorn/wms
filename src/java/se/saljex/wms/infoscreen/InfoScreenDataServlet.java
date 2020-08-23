@@ -11,7 +11,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import javax.json.Json;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -39,7 +38,7 @@ public class InfoScreenDataServlet extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            Connection con=Const.getConnection(request);
+            Connection con=Const.getPPGConnection(request);
             PreparedStatement ps;
             ResultSet rs;
             
@@ -51,37 +50,38 @@ public class InfoScreenDataServlet extends HttpServlet {
                 ps = con.prepareStatement(getSql());
                 for (int i = 0; i < 100; i++) {
                     rs = ps.executeQuery();
-                    
-                    String json = Json.createObjectBuilder()
-                    .add("ordrar", rs.getInt("ordrar"))
-                    .add("ordrarhotpick", rs.getInt("ordrarhotpick"))
-                    .add("ordrarhotpickdagens", rs.getInt("ordrarhotpickdagens"))
-                    .add("orderrader", rs.getInt("orderrader"))
-                    .add("hotpickorderrader", rs.getInt("hotpickorderrader"))
-                    .add("hotpickorderraderdagens", rs.getInt("hotpickorderraderdagens"))
-                    .add("plockadedagens", rs.getInt("plockadedagens"))
-                    .add("inlagradedagens", rs.getInt("inlagradedagens"))
-                    .add("plockade10dagar", rs.getInt("plockade10dagar"))
-                    .add("inlagrade10dagar", rs.getInt("inlagrade10dagar"))
-                    .add("plockade100dagar", rs.getInt("plockade100dagar"))
-                    .add("inlagrade100dagar", rs.getInt("inlagrade100dagar"))
-                    .build()
-                    .toString();
+                    rs.next();
+
+                    String json = "{" +
+                            "\"" + "ordrar" + "\"" + ":\"" + rs.getInt("ordrar") + "\"" +
+                            ", \"" + "ordrarhotpick" + "\"" + ":\"" + rs.getInt("ordrarhotpick") + "\"" +
+                            ", \"" + "ordrarhotpickdagens" + "\"" + ":\"" + rs.getInt("ordrarhotpickdagens") + "\"" +
+                            ", \"" + "orderrader" + "\"" + ":\"" + rs.getInt("orderrader") + "\"" +
+                            ", \"" + "hotpickorderrader" + "\"" + ":\"" + rs.getInt("hotpickorderrader") + "\"" +
+                            ", \"" + "hotpickorderraderdagens" + "\"" + ":\"" + rs.getInt("hotpickorderraderdagens") + "\"" +
+                            ", \"" + "plockadedagens" + "\"" + ":\"" + rs.getInt("plockadedagens") + "\"" +
+                            ", \"" + "inlagradedagens" + "\"" + ":\"" + rs.getInt("inlagradedagens") + "\"" +
+                            ", \"" + "plockade10dagar" + "\"" + ":\"" + rs.getInt("plockade10dagar") + "\"" +
+                            ", \"" + "inlagrade10dagar" + "\"" + ":\"" + rs.getInt("inlagrade10dagar") + "\"" +
+                            ", \"" + "plockade100dagar" + "\"" + ":\"" + rs.getInt("plockade100dagar") + "\"" +
+                            ", \"" + "inlagrade100dagar" + "\"" + ":\"" + rs.getInt("inlagrade100dagar") + "\"" +
+                            ", \"" + "i" + "\"" + ":\"" + i + "\"" +
+                            "}";
 
                     writer.write("event:data\n");
                     writer.write("data: "+ json + "\n\n");
                     writer.flush();
 
                     try {
-                            Thread.sleep(1000*60);
+                            Thread.sleep(1000*30); 
                     } catch (InterruptedException e) { e.printStackTrace();       }
                 }
             }
             catch (Exception e) { e.printStackTrace(); }
             finally { 
                 try { con.close(); } catch (Exception e) {} 
-                try { writer.close(); } catch (Exception e) {} 
             }
+            try { writer.close(); } catch (Exception e) {} 
             
         }
     }
