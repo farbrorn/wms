@@ -10,6 +10,11 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>PPG Info</title>
+        <style>
+            body {
+                font-size: 40px;
+            }
+        </style>
         <script>
 var source = new EventSource("data");
 source.addEventListener("data", 
