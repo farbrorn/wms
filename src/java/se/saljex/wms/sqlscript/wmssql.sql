@@ -70,6 +70,7 @@ begin
 	if (antal >0) then raise exception 'Order % är innehåller % rader som inte är bokade, och kan inte färdigmarkeras. Var vänlig och boka samtliga rader',pl_wmsordernr,antal; end if;
 
     perform wmssetwmsorderlock(pl_wmsordernr, false, 'Utskr', 'WMS Plockad', pl_anvandare);
+    insert into ppgorderdeleteexport (ordernr) values (pl_wmsordernr);
 end
 $BODY$
   LANGUAGE plpgsql VOLATILE
@@ -89,6 +90,7 @@ begin
     delete from wmskollin where wmsordernr=pl_wmsordernr;
     delete from wmsorderplock where wmsordernr=pl_wmsordernr;
     delete from ppgorderpick where masterordername=pl_wmsordernr;
+    insert into ppgorderdeleteexport (ordernr) values (pl_wmsordernr);
 end
 $BODY$
   LANGUAGE plpgsql VOLATILE
@@ -112,7 +114,7 @@ if not found then raise exception 'Order % hittades inte eller var låst av anna
 
 perform wmssetwmsorderlock(pl_wmsordernr, true, 'Utskr','WMS', pl_anvandare);
 
-insert into ppgorderexport (ordernr, kund, levadr12, levadr3, marke, transportor, artnr, artnamn, plockinstruktion , best, forpackinfo, refnr, pos, status, priority, deadline)
+insert into ppgorderexport (ordernr, kund, levadr12, levadr3, marke, transportor, artnr, artnamn, plockinstruktion , best, forpackinfo, refnr, pos, status, priority, deadline, directiontype)
 select
 o1.wmsordernr || case when o2.best < 0 then '-R' else '' end
 , o1.namn, o1.levadr1 || ' ' || o1.levadr2, o1.levadr3, 'Godsmärke:' || o1.marke, o1.fraktbolag || ' ' || o1.linjenr1 || ' ' || o1.linjenr2 || ' ' || o1.linjenr3,  
@@ -121,7 +123,8 @@ case when substring(o2.artnr,1,1)='*' then replace(o2.artnr,'*','#') || '-' || s
  o2.enh || ' Förp: ' || case when a.forpack <= 0 then 1 else a.forpack end || '/' || kop_pack || ' Odelbart: ' || case when a.minsaljpack <=0 then 1 else a.minsaljpack end, 
  a.bestnr || ' ' || rsk || ' ' || enummer || ' ' || refnr , o2.pos,
  0, case when o1.fraktbolag='HOT PICK' then 4 else 2 end,
- case when o1.levdat is not null then o1.levdat else current_date end
+ case when o1.levdat is not null then o1.levdat else current_date end,
+case when o2.best < 0 then 1 else 2 end
 from wmsorder1 o1 join wmsorder2 o2 on o1.wmsordernr=o2.wmsordernr left outer join 
 sxfakt.artikel a on a.nummer=o2.artnr 
 where o2.artnr <> '' and o2.artnr is not null and o2.wmsordernr=$1 and o2.best <> 0 
@@ -263,7 +266,7 @@ UNION ALL
     order2.utskriventid,
     order2.stjid
    FROM sxasfakt.order2
-UNION ALL
+/*UNION ALL
  SELECT 'IN-'::text || id AS wmsordernr,
     id AS orgordernr,
     rad as pos,  
@@ -286,7 +289,8 @@ UNION ALL
     null as utskriventid,
     stjid as stjid
    FROM sxfakt.INLEV2 where id > (select min(id) from inlev1 where datum > current_date-260)
-UNION ALL
+*/
+UNION ALL 
  SELECT 'BE-'::text || bestnr AS wmsordernr,
     bestnr AS orgordernr,
     rad as pos,  
@@ -438,7 +442,7 @@ UNION ALL
     order1.forskattbetald,
     order1.betalsatt
    FROM sxasfakt.order1
-UNION ALL
+/*UNION ALL
  SELECT 'IN-'::text || i1.id AS wmsordernr,
     'sxfakt'::text AS wmsdbschema,
     i1.id AS orgordernr,
@@ -489,6 +493,7 @@ UNION ALL
     NULL::smallint AS forskattbetald,
     NULL::character varying AS betalsatt
    FROM inlev1 i1 where datum > current_date-30
+*/
 UNION ALL
  SELECT 'BE-'::text || b1.bestnr AS wmsordernr,
     'sxfakt'::text AS wmsdbschema,
@@ -616,7 +621,7 @@ declare
 begin
 delete from ppglager;
 for this_cn in 1..array_upper(in_artnr,1) loop
-	insert into ppglager (artnr, ilager) values (in_artnr[this_cn], in_ilager[this_cn]);
+	insert into ppglager (artnr, ilager) values (in_artnr[this_cn], in_antal[this_cn]);
 end loop; 
 end;
 $BODY$
@@ -634,3 +639,12 @@ create table wmssnabbartiklar (artnr varchar, typ varchar, sortorder integer def
 insert into wmssnabbartiklar VALUES ('0030','redigeraorder', 0);
 
 
+CREATE TABLE ppgorderdeleteexport
+(
+  id serial NOT NULL primary key,
+  dateerror character varying,
+  errormessage character varying,
+  status integer DEFAULT 0,
+  ordernr character varying
+);
+GRANT ALL ON TABLE ppgorderdeleteexport TO ppg;

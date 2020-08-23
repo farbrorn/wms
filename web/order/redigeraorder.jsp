@@ -32,7 +32,7 @@
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />        <title>Redigera order</title>
-        <link rel="stylesheet" type="text/css" href="a.css">      
+        <link rel="stylesheet" type="text/css" href="<%= request.getContextPath() %>/a.css">      
         <style>
             .odd {
                 background-color: lightblue;
@@ -81,7 +81,7 @@
              } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
         } );
         XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
-        XHR.open( "POST", "ac?ac=addorderrad&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) + "&artnr=" + encodeURIComponent(artnr) );
+        XHR.open( "POST", "<%= request.getContextPath() %>/ac?ac=addorderrad&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) + "&artnr=" + encodeURIComponent(artnr) );
         XHR.send();
     }
     
@@ -97,7 +97,7 @@
                  } catch (ex) { alert("Kunde inte tolka svar från servern. (json): " + ex + " - Json: " + this.responseText); }
             } );
             XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
-            XHR.open( "POST", "ac?ac=avbrytwmsorder&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) );
+            XHR.open( "POST", "<%= request.getContextPath() %>/ac?ac=avbrytwmsorder&wmsordernr=<%= wmsordernr %>&anvandare=" + encodeURIComponent(anv) );
             XHR.send();
         }
     }    
@@ -144,7 +144,7 @@
                  } );
 
                  XHR.addEventListener( "error", function( event ) { alert( 'Oops! Okänt fel. (XMLHttpRequest, eventlistener(error)' );} );    
-                 XHR.open( "POST", "ac?ac=saveredigeradorder" );
+                 XHR.open( "POST", "<%= request.getContextPath() %>/ac?ac=saveredigeradorder" );
      //            XHR.setRequestHeader("Content-Type","multipart/formdata; charset=utf-8");
                  if (fardigmarkera) {
                      FD.append("fardigmarkera","true");
@@ -162,7 +162,7 @@
           if (this.readyState == 4 && this.status == 200) {
               document.getElementById("kollin").innerHTML = this.responseText;    
           }  };
-        xhttp.open("GET", "/wms/ac?ac=deletekolli&kolliid=" + kolliid  , true);
+        xhttp.open("GET", "<%= request.getContextPath() %>/ac?ac=deletekolli&kolliid=" + kolliid  , true);
         xhttp.send();
     }
     
@@ -172,7 +172,7 @@
           if (this.readyState == 4 && this.status == 200) {
               document.getElementById("kollin").innerHTML = this.responseText;    
           }  };
-        xhttp.open("GET", "/wms/ac?ac=addkolli&wmsordernr=<%= wmsordernr %>" +
+        xhttp.open("GET", "<%= request.getContextPath() %>/ac?ac=addkolli&wmsordernr=<%= wmsordernr %>" +
           "&kollityp=" + encodeURI(document.getElementById("kollityp").value) +
           "&antal=" + encodeURI(document.getElementById("antal").value) +
           "&viktkg=" + encodeURI(document.getElementById("viktkg").value) +

@@ -20,7 +20,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Boka utleverans</title>
         <%= Const.getBarcodeFontLinkHTML() %>
-        <link rel="stylesheet" type="text/css" href="a.css">            
+        <link rel="stylesheet" type="text/css" href="<%= request.getContextPath() %>/a.css">            
     </head>
     <body>
         

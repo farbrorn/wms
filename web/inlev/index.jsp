@@ -20,12 +20,21 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="0" />        <title>Redigera order</title>
+        <meta http-equiv="Expires" content="0" />        
         <title>Inleverans</title>
         <link rel="stylesheet" type="text/css" href="<%= request.getContextPath() %>/a.css">            
         <style>
         </style>
         <script>
+            function toggleRow(r) {
+               var x = document.getElementById("r"+r);
+                if (x.style.display === "none") {
+                    x.style.display = "table-row";
+                  } else {
+                    x.style.display = "none";
+                  }               
+            }
+            
 function overfor(id) {
     var anv = prompt("Bekräfta användare");
     if (anv!=null && anv.length > 0) {
@@ -53,6 +62,7 @@ function overfor(id) {
             </script>
     </head>
     <body>
+        <h1>För över inleverans</h1>
         <table>
             <tr style="font-weight: bold;"><td style="width:4em;">Bestnr</td><td style="width:4em;">ID</td><td style="width:6em;">Datum</td><td style="width:8em;">Levnr</td><td style="width:15em;">Levnamn</td><td></td></tr>
         <%
@@ -65,6 +75,7 @@ function overfor(id) {
             rs = ps.executeQuery();
             int currId=0;
             boolean odd=false;
+            int cn=0;
             while (rs.next()) {
             %>
             <% if (currId == 0 || currId!=rs.getInt("id")) { %>
@@ -72,6 +83,7 @@ function overfor(id) {
                     </table></td></tr>
                 <% } %>
                 <% odd = !odd; %>
+                <% cn++; %>
                 <% currId = rs.getInt("id"); %>
                 <tr class="<%= odd ? "odd" : "even" %>" style="font-weight: bold;">
                     <td><%= rs.getInt("bestnr") %></td>
@@ -79,9 +91,9 @@ function overfor(id) {
                     <td><%= rs.getString("datum") %></td>
                     <td><%= Const.toHtml(rs.getString("levnr")) %></td>
                     <td><%= Const.toHtml(rs.getString("levnamn")) %></td>
-                    <td><button onclick="overfor(<%= rs.getInt("id") %>)">Överför</button></td>
+                    <td><button onclick="overfor(<%= rs.getInt("id") %>)">Överför</button><a onclick="toggleRow(<%= cn %>)">Visa</a></td>
                 </tr>
-                <tr class="<%= odd ? "odd" : "even" %>"><td></td><td colspan="5"><table>
+                <tr id="r<%= cn %>" style="display: none" class="<%= odd ? "odd" : "even" %>"><td></td><td colspan="5"><table>
                             <colgroup>
                                 <col style="width: 8em;">
                                 <col style="width: 24em;">
