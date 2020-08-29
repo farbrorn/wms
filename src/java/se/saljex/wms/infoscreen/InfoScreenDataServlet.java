@@ -36,52 +36,40 @@ public class InfoScreenDataServlet extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         try (PrintWriter out = response.getWriter()) {
             Connection con=Const.getPPGConnection(request);
             PreparedStatement ps;
             ResultSet rs;
             
-            response.setContentType("text/event-stream");
-            response.setCharacterEncoding("UTF-8");
-            PrintWriter writer = response.getWriter();
-            
             try {
                 ps = con.prepareStatement(getSql());
-                for (int i = 0; i < 100; i++) {
-                    rs = ps.executeQuery();
-                    rs.next();
+                rs = ps.executeQuery();
+                rs.next();
 
-                    String json = "{" +
-                            "\"" + "ordrar" + "\"" + ":\"" + rs.getInt("ordrar") + "\"" +
-                            ", \"" + "ordrarhotpick" + "\"" + ":\"" + rs.getInt("ordrarhotpick") + "\"" +
-                            ", \"" + "ordrarhotpickdagens" + "\"" + ":\"" + rs.getInt("ordrarhotpickdagens") + "\"" +
-                            ", \"" + "orderrader" + "\"" + ":\"" + rs.getInt("orderrader") + "\"" +
-                            ", \"" + "hotpickorderrader" + "\"" + ":\"" + rs.getInt("hotpickorderrader") + "\"" +
-                            ", \"" + "hotpickorderraderdagens" + "\"" + ":\"" + rs.getInt("hotpickorderraderdagens") + "\"" +
-                            ", \"" + "plockadedagens" + "\"" + ":\"" + rs.getInt("plockadedagens") + "\"" +
-                            ", \"" + "inlagradedagens" + "\"" + ":\"" + rs.getInt("inlagradedagens") + "\"" +
-                            ", \"" + "plockade10dagar" + "\"" + ":\"" + rs.getInt("plockade10dagar") + "\"" +
-                            ", \"" + "inlagrade10dagar" + "\"" + ":\"" + rs.getInt("inlagrade10dagar") + "\"" +
-                            ", \"" + "plockade100dagar" + "\"" + ":\"" + rs.getInt("plockade100dagar") + "\"" +
-                            ", \"" + "inlagrade100dagar" + "\"" + ":\"" + rs.getInt("inlagrade100dagar") + "\"" +
-                            ", \"" + "i" + "\"" + ":\"" + i + "\"" +
-                            "}";
+                String json = "{" +
+                        "\"" + "ordrar" + "\"" + ":\"" + rs.getInt("ordrar") + "\"" +
+                        ", \"" + "ordrarhotpick" + "\"" + ":\"" + rs.getInt("ordrarhotpick") + "\"" +
+                        ", \"" + "ordrarhotpickdagens" + "\"" + ":\"" + rs.getInt("ordrarhotpickdagens") + "\"" +
+                        ", \"" + "orderrader" + "\"" + ":\"" + rs.getInt("orderrader") + "\"" +
+                        ", \"" + "hotpickorderrader" + "\"" + ":\"" + rs.getInt("hotpickorderrader") + "\"" +
+                        ", \"" + "hotpickorderraderdagens" + "\"" + ":\"" + rs.getInt("hotpickorderraderdagens") + "\"" +
+                        ", \"" + "plockadedagens" + "\"" + ":\"" + rs.getInt("plockadedagens") + "\"" +
+                        ", \"" + "inlagradedagens" + "\"" + ":\"" + rs.getInt("inlagradedagens") + "\"" +
+                        ", \"" + "plockade14dagarsnitt" + "\"" + ":\"" + rs.getInt("plockade14dagarsnitt") + "\"" +
+                        ", \"" + "inlagrade14dagarsnitt" + "\"" + ":\"" + rs.getInt("inlagrade14dagarsnitt") + "\"" +
+                        ", \"" + "plockade140dagarsnitt" + "\"" + ":\"" + rs.getInt("plockade140dagarsnitt") + "\"" +
+                        ", \"" + "inlagrade140dagarsnitt" + "\"" + ":\"" + rs.getInt("inlagrade140dagarsnitt") + "\"" +
+                        "}";
 
-                    writer.write("event:data\n");
-                    writer.write("data: "+ json + "\n\n");
-                    writer.flush();
-
-                    try {
-                            Thread.sleep(1000*30); 
-                    } catch (InterruptedException e) { e.printStackTrace();       }
-                }
+                out.write(json);
+                out.flush();
             }
             catch (Exception e) { e.printStackTrace(); }
             finally { 
                 try { con.close(); } catch (Exception e) {} 
             }
-            try { writer.close(); } catch (Exception e) {} 
             
         }
     }
@@ -143,12 +131,27 @@ public class InfoScreenDataServlet extends HttpServlet {
 "select \n" +
 "sum(case when type in (2,4) and convert(date, creationdate) = convert(date,CURRENT_TIMESTAMP)  then 1 else 0 end) as plockadedagens,\n" +
 "sum(case when type in (1,3) and convert(date, creationdate) = convert(date,CURRENT_TIMESTAMP) then 1 else 0 end) as inlagradedagens,\n" +
-"sum(case when type in (2,4) and creationdate >= dateadd(day,-10, CURRENT_TIMESTAMP) then 1 else 0 end) as plockade10dagar,\n" +
-"sum(case when type in (1,3) and creationdate >= dateadd(day,-10, CURRENT_TIMESTAMP) then 1 else 0 end) as inlagrade10dagar,\n" +
-"sum(case when type in (2,4) and creationdate >= dateadd(day,-100, CURRENT_TIMESTAMP) then 1 else 0 end) as plockade100dagar,\n" +
-"sum(case when type in (1,3) and creationdate >= dateadd(day,-100, CURRENT_TIMESTAMP) then 1 else 0 end) as inlagrade100dagar\n" +
+"sum(case when type in (2,4) and creationdate >= dateadd(day,-10, CURRENT_TIMESTAMP) then 1 else 0 end) as plockade14dagar,\n" +
+"\n" +
+"sum(case when type in (2,4) and cast (creationdate as date) between  cast(dateadd(day,-15, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then 1 else 0 end) / \n" +
+"nullif(count (DISTINCT case when type in (2,4) and cast (creationdate as date) between  cast(dateadd(day,-15, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then convert(date, creationdate) else null end),0)\n" +
+"as plockade14dagarsnitt,\n" +
+"\n" +
+"sum(case when type in (1,3) and cast (creationdate as date) between  cast(dateadd(day,-15, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then 1 else 0 end) / \n" +
+"nullif(count (DISTINCT case when type in (1,3) and cast (creationdate as date) between  cast(dateadd(day,-15, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then convert(date, creationdate) else null end),0)\n" +
+"as inlagrade14dagarsnitt,\n" +
+"\n" +
+"sum(case when type in (2,4) and cast (creationdate as date) between  cast(dateadd(day,-141, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then 1 else 0 end) / \n" +
+"nullif(count (DISTINCT case when type in (2,4) and cast (creationdate as date) between  cast(dateadd(day,-141, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then convert(date, creationdate) else null end),0)\n" +
+"as plockade140dagarsnitt,\n" +
+"\n" +
+"sum(case when type in (1,3) and cast (creationdate as date) between  cast(dateadd(day,-141, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then 1 else 0 end) / \n" +
+"nullif(count (DISTINCT case when type in (1,3) and cast (creationdate as date) between  cast(dateadd(day,-141, CURRENT_TIMESTAMP) as date) and cast(dateadd(day,-1, CURRENT_TIMESTAMP) as date) then convert(date, creationdate) else null end),0)\n" +
+"as inlagrade140dagarsnitt\n" +
+"\n" +
 "from history \n" +
-"where QuantityConfirmed <> 0 and creationdate >= dateadd(day,-100, CURRENT_TIMESTAMP)  and type in (1,2,3,4)\n" +
-") h1 on 1=1";
+"where QuantityConfirmed <> 0 and cast(creationdate as date) >= cast(dateadd(day,-141, CURRENT_TIMESTAMP) as date)  and type in (1,2,3,4)\n" +
+") h1 on 1=1\n" +
+"";
     }
 }
