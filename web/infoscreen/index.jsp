@@ -42,11 +42,13 @@
                 display: inline-block;
                 width: 400px;
                 min-height: 200px;
+                flex-grow: 1;
             }
             .ruta th {
                 padding-right: 8px;
                 font-weight: normal;
                 font-size: 50%;
+                text-align: left;
             }
             .ruta td {
                 padding-right: 8px;
@@ -90,34 +92,37 @@ function updateHtmlData(injson) {
   document.getElementById("inlagrade14dagarsnitt").innerHTML = o.inlagrade14dagarsnitt;
   document.getElementById("plockade140dagarsnitt").innerHTML = o.plockade140dagarsnitt;
   document.getElementById("inlagrade140dagarsnitt").innerHTML = o.inlagrade140dagarsnitt;
-  if (o.hotpickorderraderdagens>0 && flashVar==null) startFlash(); else  stopFlash();
+  if (o.hotpickorderraderdagens>0)  startFlash();  else  stopFlash(); 
 }
-
-
 
 
     var flashVar = null;
     var flashColor=1;
 function startFlash() {
-    flashVar = setInterval(flash, 1000);
+    if(flashVar==null) flashVar = setInterval(flash, 1000);
 }
 function stopFlash() {
     if (flashVar !== null) {
         clearInterval(flashVar);
         flashVar=null;
         document.body.style.background = "blue";
+        document.getElementById("ordrarhotpickdagens").style.color = "black";
+        document.getElementById("hotpickorderraderdagens").style.color = "black";
     }
 }
 
 function flash() {
     if (flashColor===1) {
-        color = "red";
+        document.body.style.background = "red";
+        document.getElementById("ordrarhotpickdagens").style.color = "red";
+        document.getElementById("hotpickorderraderdagens").style.color = "red";
         flashColor=2;
     } else {
-        color = "blue";
+        document.body.style.background = "blue";
+        document.getElementById("ordrarhotpickdagens").style.color = "black";
+        document.getElementById("hotpickorderraderdagens").style.color = "black";
         flashColor=1;        
     }
-    document.body.style.background = color;
 }
 
 setTimeout(function(){
@@ -129,9 +134,6 @@ setTimeout(function(){
 //    location.reload();
     //document.getElementById("intrainfo").src = document.getElementById("intrainfo").src;
 //}
-
-
-
             </script>
         
     </head>
@@ -145,7 +147,7 @@ setTimeout(function(){
                     </div>
                 </div>
             </div>
-            <div class="flexrow1">
+            <div class="flexrow1" style="display: flex;">
                 <div class="ruta">
                     <h2>Väntande ordrar</h2>
                     <table style="width: 100%">
