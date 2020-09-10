@@ -166,7 +166,7 @@ public class Const {
 "case when "+colnameFraktbolag+"='Turbil' and ("+colnameLinjenr+" is null ) then \n" +
 "	'Lämpligt' \n" +
 "else \n" +
-"	case when "+colnameFraktbolag+"='Turbil' then \n" +
+"	case when "+colnameFraktbolag+"='Turbil' or " + colnameLinjenr + " = 'N00' then \n" +
 "		'Turbil ' || "+colnameLinjenr+" " +
 "	else\n" +
 "		case when "+colnameFraktbolag+" is null or trim("+colnameFraktbolag+")='' then \n" +
