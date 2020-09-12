@@ -146,11 +146,8 @@ public class ActionServlet extends HttpServlet {
                     ps.setString(2, wmsOrdernr);
                     rs = ps.executeQuery();
                     
-                    PreparedStatement psInsert = con.prepareStatement("insert into wmsorderplock (wmsordernr, pos, artnr) values (?,?,?) on conflict do nothing");
-                    PreparedStatement psUpdate = con.prepareStatement("update wmsorderplock set ilager=?, best=?, bekraftat=? where wmsordernr=? and pos=?");
+                    PreparedStatement psInsert = con.prepareStatement("insert into ppgorderpick (status, masterordername, hostidentification, materialname, quantityconfirmed) values (2,?,?,?,?)");
                     String artnr;
-                    Double ilager;
-                    Double best;
                     Double bekraftat;
                     final String nbsp = Character.toString((char)160);// non breaking space
                     String tal="";
@@ -178,27 +175,6 @@ public class ActionServlet extends HttpServlet {
                                     psInsert.executeUpdate();
 
                                         
-                                    try {
-                                        tal = request.getParameter("ilager" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "").replace("\u2212","-");
-                                        ilager = Double.parseDouble(tal); 
-                                    }
-                                    catch (NullPointerException ne) { ilager=null; }
-                                    catch (NumberFormatException fe) { 
-                                        if(request.getParameter("ilager" + arrPos).length()<1) ilager=null; else throw new ErrorException("Felaktigt värde artikel " + artnr + " (" + request.getParameter("ilager" + arrPos) + ")"
-                                            + "(" + tal +")"
-                                            + " ilager position " + arrPos);
-                                    }
-
-                                    try { 
-                                        tal = request.getParameter("best" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "").replace("\u2212","-");
-                                        best = Double.parseDouble(tal); 
-                                    }
-                                    catch (NullPointerException ne) { best=null; }
-                                    catch (NumberFormatException fe) { 
-                                        if(request.getParameter("best" + arrPos).length()<1) best=null; else throw new ErrorException("Felaktigt värde artikel " + artnr + " (" + request.getParameter("best" + arrPos) + ")"
-                                            + "(" + tal +")"
-                                            + " best position " + arrPos); 
-                                    }
 
                                     try { 
                                         tal = request.getParameter("bekraftat" + arrPos).replace(",",".").replace(" ", "").replace(nbsp, "").replace("\u2212","-");
@@ -207,12 +183,13 @@ public class ActionServlet extends HttpServlet {
                                     catch (NullPointerException ne) { bekraftat=null; }
                                     catch (NumberFormatException fe) { if(request.getParameter("bekraftat" + arrPos).length()<1) bekraftat=null; else throw new ErrorException("Felaktigt värde artikel " + artnr + " (" + request.getParameter("bekraftat" + arrPos) + ") bekraftat position " + arrPos); }
 
-                                    if (ilager==null) psUpdate.setNull(1, java.sql.Types.DOUBLE); else psUpdate.setDouble(1, ilager);
-                                    if (best==null) psUpdate.setNull(2, java.sql.Types.DOUBLE); else psUpdate.setDouble(2, best);
-                                    if (bekraftat==null) psUpdate.setNull(3, java.sql.Types.DOUBLE); else psUpdate.setDouble(3, bekraftat);
-                                    psUpdate.setString(4, wmsOrdernr);
-                                    psUpdate.setInt(5, pos);
-                                    psUpdate.executeUpdate();
+                                    if (bekraftat!=null) {
+                                        psInsert.setString(1, wmsOrdernr);
+                                        psInsert.setString(2, ""+pos);
+                                        psInsert.setString(3, artnr);
+                                        psInsert.setDouble(4, bekraftat);
+                                        psInsert.executeUpdate();
+                                    }
                                 }
                             }
                         }

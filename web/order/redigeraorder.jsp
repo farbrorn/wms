@@ -409,7 +409,6 @@
                 <td class=""><%= Const.noNull(o2.getDouble("ilager")).compareTo(0.0)>0 ? "*" : "" %></td>
                 <td class=""><%= Const.toHtml(o2.getString("enh")) %></td>
                 <td><%= Const.getFormatNumber0To2Dec(o2.getDouble("ilager")) %></td>
-                <td class=""></td>
                 <% Double quantityConfirmed = o2.getDouble("quantityconfirmed"); %>
                 <% if (o2.wasNull()) quantityConfirmed=null; %>
                 <%
@@ -418,8 +417,9 @@
                     if (o2.wasNull()) bekraftat=null;
                     if (bekraftat==null && quantityConfirmed!=null) bekraftat=quantityConfirmed;
                 %>
+                <td class=""><%= bekraftat==null ? "" : Const.getFormatNumber0To2Dec(bekraftat) %></td>
                 
-                <td><input onkeydown="bekraftatKeyHandler(event,<%= rowcn  %>)" <%=  rowcn==1 ? "autofocus" : "" %> style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="<%= bekraftat==null ? "" : Const.getFormatNumber0To2Dec(bekraftat) %>" ></td>
+                <td><input onkeydown="bekraftatKeyHandler(event,<%= rowcn  %>)" <%=  rowcn==1 ? "autofocus" : "" %> style="width: 4em; height: 1.3em;" id="i_bekraftat<%= rowcn %>" name="bekraftat<%= rowcn %>" value="" ></td>
                 <td>
                     <input class="no-print" type="button" value="&#10004;" onclick="setFullevRad(<%= rowcn %>)">
                     <input type="hidden" name="pos<%= rowcn %>" value="<%= o2.getInt("pos") %>">
