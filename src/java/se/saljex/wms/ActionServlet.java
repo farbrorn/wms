@@ -146,7 +146,7 @@ public class ActionServlet extends HttpServlet {
                     ps.setString(2, wmsOrdernr);
                     rs = ps.executeQuery();
                     
-                    PreparedStatement psInsert = con.prepareStatement("insert into ppgorderpick (status, masterordername, hostidentification, materialname, quantityconfirmed) values (2,?,?,?,?)");
+                    PreparedStatement psInsert = con.prepareStatement("insert into ppgorderpick (status, masterordername, hostidentification, materialname, quantityconfirmed, motivetype) values (2,?,?,?,?,0)");
                     String artnr;
                     Double bekraftat;
                     final String nbsp = Character.toString((char)160);// non breaking space

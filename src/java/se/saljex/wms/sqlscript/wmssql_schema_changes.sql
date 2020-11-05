@@ -2,6 +2,7 @@
 create or replace function wms_order2_wmslock_raiseexception() returns trigger as  $$ begin raise exception 'Ordern % är överförd till wms-system och kan inte ändras utan att den frigörs från wms-systemet.', OLD.ordernr; end $$ language plpgsql;
 create trigger order2_wmslock_check before update of artnr, namn, best, pos, ordernr or delete on order2 
 	for each row when (OLD.wmslock is not null) execute procedure wms_order2_wmslock_raiseexception();
+alter table order2 add column hindrarestorder boolean ;
 
 
 

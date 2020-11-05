@@ -63,9 +63,9 @@ declare
 antal integer;
 begin
 	--Kolla om alla rader är ifyllda
-	select into antal sum(case when coalesce(op.bekraftat,ppg.quantityconfirmed) is null then 1 else 0 end::integer) from wmsorder2 o2
-	left outer join (select masterordername, hostidentification, sum(quantityconfirmed::numeric) as quantityconfirmed from ppgorderpick where motivetype not in (1,3,5,6,10) group by masterordername, hostidentification) ppg on ppg.masterordername = o2.wmsordernr and ppg.hostidentification::numeric=o2.pos 
-	left outer join wmsorderplock op on op.wmsordernr=o2.wmsordernr and op.pos=o2.pos
+	select into antal sum(case when ppg.quantityconfirmed is null then 1 else 0 end::integer) from wmsorder2 o2
+	left outer join (select masterordername, hostidentification, sum(quantityconfirmed::numeric) as quantityconfirmed from ppgorderpick where motivetype not in (3,5,6,10) group by masterordername, hostidentification) ppg on ppg.masterordername = o2.wmsordernr and ppg.hostidentification::numeric=o2.pos 
+--	left outer join wmsorderplock op on op.wmsordernr=o2.wmsordernr and op.pos=o2.pos
 	where o2.wmsordernr=pl_wmsordernr and o2.orgordernr= wmsordernr2int(pl_wmsordernr) and o2.artnr is not null and length(o2.artnr)>0 ;
 	if (antal >0) then raise exception 'Order % är innehåller % rader som inte är bokade, och kan inte färdigmarkeras. Var vänlig och boka samtliga rader',pl_wmsordernr,antal; end if;
 
@@ -88,7 +88,7 @@ $BODY$
 begin
     perform wmssetwmsorderlock(pl_wmsordernr, false, 'Sparad', 'WMS Avbrutren', pl_anvandare);
     delete from wmskollin where wmsordernr=pl_wmsordernr;
-    delete from wmsorderplock where wmsordernr=pl_wmsordernr;
+--    delete from wmsorderplock where wmsordernr=pl_wmsordernr;
     delete from ppgorderpick where masterordername=pl_wmsordernr;
     insert into ppgorderdeleteexport (ordernr) values (pl_wmsordernr);
 end
@@ -581,7 +581,7 @@ language plpgsql;
 
 
 create table wmskollin (kolliid serial primary key, wmsordernr varchar not null, kollityp varchar, langdcm integer, breddcm integer, hojdcm integer, viktkg integer);
-create table wmsorderplock (wmsordernr varchar not null, pos integer not null, artnr varchar not null, ilager real, best real, bekraftat real, crts timestamp default current_timestamp, primary key (wmsordernr, pos));
+--create table wmsorderplock (wmsordernr varchar not null, pos integer not null, artnr varchar not null, ilager real, best real, bekraftat real, crts timestamp default current_timestamp, primary key (wmsordernr, pos));
 
 
 
